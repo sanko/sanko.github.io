@@ -35,7 +35,7 @@ padding: 0!important;
 }
 
 blockquote:after {
-content: "â€";
+content: "”";
 float: right;
 line-height: .1em;
 margin-right: 0;
@@ -43,7 +43,7 @@ vertical-align: .5em;
 }
 
 blockquote:before {
-content: "â€œ";
+content: "“";
 float: left;
 line-height: .75em;
 margin-left: -.5em;
@@ -144,7 +144,7 @@ padding-top: .5em;
 }
 
 li:before {
-content: "· ";
+content: "·";
 font-weight: bolder;
 }
 
@@ -164,4 +164,3 @@ padding-left: 24.5%;
 padding-right: 24.5%;
 padding-top: .5em;
 }
-

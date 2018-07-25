@@ -1,0 +1,15 @@
+ html, html body {
+        background: transparent
+    }
+    #wrapper {
+        color: #555
+    }
+    #iehack {
+        height: 100%;
+        width: 100%;
+        position: fixed;
+        z-index: -1;
+        left: 0;
+        top: 0;
+        filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#eeffffff', endColorstr='#ddeeeeee');
+    }
