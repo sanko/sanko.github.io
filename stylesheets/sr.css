@@ -164,3 +164,16 @@ padding-left: 24.5%;
 padding-right: 24.5%;
 padding-top: .5em;
 }
+
+@media screen and (max-width: 768px) {
+  html {
+    font-size: calc(16px + 6 * ((100vw - 768px) / 680));
+  }
+
+  p, ul, ol, pre, blockquote {
+    margin-top: 1em;
+    padding-left: 10.5%;
+    padding-right: 10.5%;
+    padding-top: .5em;
+  }
+}
