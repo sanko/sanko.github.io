@@ -1,0 +1,62 @@
+{
+  "profile": {
+    "name": "Sanko Robinson",
+    "tagline": "Human.",
+    "url": "https://sankorobinson.com",
+    "og_image": "https://sankorobinson.com/og-card.png",
+    "email": "sanko@cpan.org",
+    "copyright_start": "2006",
+    "socials": [
+      { "name": "github", "url": "https://github.com/sanko" },
+      { "name": "bluesky", "url": "https://bsky.app/profile/sankorobinson.com" },
+      { "name": "email", "url": "mailto:sanko@cpan.org" }
+    ]
+  },
+  "github": {
+    "sources": [
+      {
+        "name": "projects",
+        "owner": "sanko",
+        "repos": ["infix", "Affix.pm", "alien-libui", "mii", "libui.pm", "Bluesky.pm", "At.pm", "app-bsky", "net-bittorrent-protocol", "Alien-xmake", "net-bittorrent-future", "Fiction", "Cancer.pm"],
+        "issues": false,
+        "releases": true
+      },
+      {
+        "name": "personal",
+        "owner": "sanko",
+        "repos": ["sanko.github.io"],
+        "discussions": true,
+        "issues": false,
+        "releases": false
+      },
+      {
+        "name": "SDL3",
+        "owner": "Perl-SDL3",
+        "repos": ["SDL3.pm", "FFI-SDL3.pm",
+            "Alien-SDL3.pm", "Alien-SDL3_image.pm", "Alien-SDL3_mixer.pm", "Alien-SDL3_ttf.pm", "Alien-SDL3_rtf.pm", "Alien-SDL3_net.pm"],
+        "discussions": false,
+        "issues": false,
+        "releases": true
+      }
+    ],
+    "groups": {
+      "Infrastructure": ["sanko/dotfiles", "payment-gateway"]
+    },
+    "tag_overrides": { "css": "CSS", "ai": "AI" }
+  },
+  "bluesky": {
+    "sources": [
+      { "name": "social", "handle": "sankorobinson.com" }
+    ]
+  },
+  "feeds": {
+    "feed.xml": { "type": "rss", "sources": ["*"] },
+    "atom.xml": { "type": "atom", "sources": ["*"] },
+    "feeds/code.xml": { "type": "atom", "sources": ["personal"], "title": "Sanko Robinson - Code" }
+  },
+  "rss": {
+  "sources": [
+    { "name": "hacker-news", "url": "https://news.ycombinator.com/rss" }
+  ]
+}
+}
