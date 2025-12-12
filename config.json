@@ -53,10 +53,6 @@
     "feed.xml": { "type": "rss", "sources": ["*"] },
     "atom.xml": { "type": "atom", "sources": ["*"] },
     "feeds/code.xml": { "type": "atom", "sources": ["personal"], "title": "Sanko Robinson - Code" }
-  },
-  "rss": {
-  "sources": [
-    { "name": "hacker-news", "url": "https://news.ycombinator.com/rss" }
-  ]
+  }
 }
 }
