@@ -4,6 +4,7 @@ const fetch = require('node-fetch');
 const MarkdownIt = require('markdown-it');
 const RSS = require('rss');
 const Parser = require('rss-parser');
+const ogs = require('open-graph-scraper');
 const {
     Liquid
 } = require('liquidjs');
@@ -24,6 +25,9 @@ const md = new MarkdownIt({
 const engine = new Liquid();
 // Register 'markdown' filter so we can use {{ item.body | markdown }} in the template
 engine.registerFilter('markdown', (str) => md.render(str || ''));
+engine.registerFilter('pluralize', (count, singular, plural) => {
+    return count === 1 ? singular : (plural || singular + 's');
+});
 
 const rssParser = new Parser();
 const slugify = txt => txt.toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -60,6 +64,19 @@ function getPrimaryGitHubUser() {
 }
 
 // FETCHERS
+
+async function fetchOpenGraphData(url) {
+    try {
+        const { result } = await ogs({ url });
+        return {
+            image: result.ogImage?.[0]?.url || result.ogImage?.url || null,
+            description: result.ogDescription || null
+        };
+    } catch (e) {
+        // console.error(`OGS Error ${url}:`, e.result?.error || e.message); // Too noisy
+        return { image: null, description: null };
+    }
+}
 
 async function fetchGitHub() {
     if (!config.github?.sources) return [];
@@ -117,6 +134,11 @@ async function fetchGitHub() {
                     }
 
                     if (firstRun && !githubStatus && json.data.user?.status) githubStatus = json.data.user.status;
+
+                    if (!json.data.repository) {
+                        console.error(`GH Error ${repo}: Repository not found or access denied.`);
+                        break;
+                    }
 
                     const {
                         discussions,
@@ -348,6 +370,7 @@ async function fetchRaindrop() {
             title: item.title,
             url: item.link,
             body: item.note || "",
+            image: item.cover || null,
             tags: ['bookmark', ...item.tags],
             metrics: {}
         }));
@@ -396,8 +419,14 @@ async function fetchRSS() {
     for (const source of config.rss.sources) {
         try {
             const feed = await parser.parseURL(source.url);
-            feed.items.slice(0, 10).forEach(item => {
+            // Limit concurrent OGS fetches
+            for (const item of feed.items.slice(0, 10)) {
                 const bodyText = (item.contentSnippet || item.content || "").trim();
+                let ogData = { image: null, description: null };
+                if (item.link) {
+                   ogData = await fetchOpenGraphData(item.link);
+                }
+
                 allData.push({
                     sourceName: source.name,
                     type: 'article',
@@ -408,10 +437,11 @@ async function fetchRSS() {
                     title: item.title,
                     url: item.link,
                     body: bodyText,
+                    image: ogData.image,
                     tags: ['rss', slugify(source.name)],
                     metrics: {}
                 });
-            });
+            }
         } catch (e) {
             console.error(`RSS Error ${source.name}:`, e.message);
         }
@@ -564,9 +594,14 @@ function prepareTemplateData(allContent, uniqueTags) {
     // 2. Timeline
     const timeline = [];
     const byYear = {};
-    allContent.forEach(item => {
+    allContent.forEach((item, index) => {
         const year = item.date.getFullYear();
         if (!byYear[year]) byYear[year] = [];
+
+        // Generate a simple ID for permalinks
+        // Using date + index to ensure uniqueness if titles missing
+        const dateStr = item.date.toISOString().slice(0, 10);
+        item.id = `entry-${dateStr}-${index}`;
 
         // Calculate helper properties for Liquid
         item.tag_classes = item.tags.map(t => `tag-${t}`).join(' ');

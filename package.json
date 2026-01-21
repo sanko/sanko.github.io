@@ -12,6 +12,7 @@
     "markdown-it": "^13.0.2",
     "markdown-it-emoji": "^2.0.2",
     "node-fetch": "^2.7.0",
+    "open-graph-scraper": "^6.11.0",
     "rss": "^1.2.2",
     "rss-parser": "^3.13.0"
   },
@@ -26,6 +27,5 @@
   "bugs": {
     "url": "https://github.com/sanko/monolog/issues"
   },
-  "homepage": "https://github.com/sanko/monolog#readme",
-  "devDependencies": {}
+  "homepage": "https://github.com/sanko/monolog#readme"
 }
