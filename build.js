@@ -67,10 +67,13 @@ async function fetchGitHub() {
     const primaryUser = getPrimaryGitHubUser();
     const pagesRepo = primaryUser ? `${primaryUser}/${primaryUser}.github.io` : null;
 
-    const query = `query($owner: String!, $name: String!, $user: String!) {
+    const query = `query($owner: String!, $name: String!, $user: String!, $after: String) {
       user(login: $user) { status { emoji, message, indicatesLimitedAvailability } }
       repository(owner: $owner, name: $name) {
-        discussions(first: 20, orderBy: {field: CREATED_AT, direction: DESC}) { nodes { title, url, createdAt, body, author { login }, category { name }, labels(first: 5) { nodes { name } }, comments { totalCount }, reactions { totalCount } } }
+        discussions(first: 100, orderBy: {field: CREATED_AT, direction: DESC}, after: $after) {
+          pageInfo { hasNextPage, endCursor }
+          nodes { title, url, createdAt, body, author { login }, category { name }, labels(first: 5) { nodes { name } }, comments { totalCount }, reactions { totalCount } }
+        }
         issues(first: 10, orderBy: {field: CREATED_AT, direction: DESC}) { nodes { title, url, createdAt, body, author { login }, labels(first: 5) { nodes { name } }, comments { totalCount }, reactions { totalCount } } }
         releases(first: 5, orderBy: {field: CREATED_AT, direction: DESC}) { nodes { tagName, url, publishedAt, description, name } }
       }
@@ -84,113 +87,137 @@ async function fetchGitHub() {
         const enableReleases = source.releases !== false;
 
         for (const repo of source.repos) {
-            try {
-                const res = await fetch('https://api.github.com/graphql', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `bearer ${process.env.GH_TOKEN}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        query,
-                        variables: {
-                            owner: source.owner,
-                            name: repo,
-                            user: primaryUser || source.owner
-                        }
-                    })
-                });
-                const json = await res.json();
-                if (!json.data) continue;
+            let hasNextPage = true;
+            let endCursor = null;
+            let firstRun = true;
 
-                if (!githubStatus && json.data.user?.status) githubStatus = json.data.user.status;
+            while (hasNextPage) {
+                try {
+                    const res = await fetch('https://api.github.com/graphql', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `bearer ${process.env.GH_TOKEN}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            query,
+                            variables: {
+                                owner: source.owner,
+                                name: repo,
+                                user: primaryUser || source.owner,
+                                after: endCursor
+                            }
+                        })
+                    });
+                    const json = await res.json();
+                    if (!json.data) {
+                        // If we fail on a page, we might just stop this repo
+                        console.error(`GH Error ${repo} (page): No data.`, json.errors || json);
+                        break;
+                    }
 
-                const {
-                    discussions,
-                    issues,
-                    releases
-                } = json.data.repository;
-                const repoSlug = slugify(repo);
-                const fullRepoName = `${source.owner}/${repo}`;
-                if (!tagDisplayMap[repoSlug]) tagDisplayMap[repoSlug] = repo;
+                    if (firstRun && !githubStatus && json.data.user?.status) githubStatus = json.data.user.status;
 
-                const pushItem = (item, type, tags) => {
-                    const groups = [];
-                    const fullName = `${source.owner}/${repo}`;
-                    if (config.github.groups) {
-                        for (const [gName, rList] of Object.entries(config.github.groups)) {
-                            if (rList.includes(fullName) || rList.includes(repo)) {
-                                const gSlug = slugify(gName);
-                                groups.push(gSlug);
-                                if (!tagDisplayMap[gSlug]) tagDisplayMap[gSlug] = gName;
+                    const {
+                        discussions,
+                        issues,
+                        releases
+                    } = json.data.repository;
+                    const repoSlug = slugify(repo);
+                    const fullRepoName = `${source.owner}/${repo}`;
+                    if (!tagDisplayMap[repoSlug]) tagDisplayMap[repoSlug] = repo;
+
+                    const pushItem = (item, type, tags) => {
+                        const groups = [];
+                        const fullName = `${source.owner}/${repo}`;
+                        if (config.github.groups) {
+                            for (const [gName, rList] of Object.entries(config.github.groups)) {
+                                if (rList.includes(fullName) || rList.includes(repo)) {
+                                    const gSlug = slugify(gName);
+                                    groups.push(gSlug);
+                                    if (!tagDisplayMap[gSlug]) tagDisplayMap[gSlug] = gName;
+                                }
                             }
                         }
-                    }
-                    allData.push({
-                        sourceName: source.name,
-                        type: type,
-                        service: 'github',
-                        owner: source.owner,
-                        repo: repo,
-                        date: new Date(item.createdAt || item.publishedAt),
-                        title: item.title || item.name || item.tagName,
-                        url: item.url,
-                        body: item.body || item.description || "",
-                        tags: [...new Set([...tags, ...groups])],
-                        metrics: {
-                            comments: item.comments?.totalCount || 0,
-                            reactions: item.reactions?.totalCount || 0
-                        }
-                    });
-                };
-
-                if (enableDiscussions && discussions) {
-                    discussions.nodes.forEach(d => {
-                        // "Now" Page Logic
-                        if (pagesRepo && fullRepoName === pagesRepo && d.category.name.toLowerCase() === 'announcements') {
-                            const date = new Date(d.createdAt);
-                            if (!nowPost || date > nowPost.date) nowPost = {
-                                body: d.body,
-                                date: date
-                            };
-                            return;
-                        }
-                        if (d.category.name.toLowerCase() === 'now') {
-                            const date = new Date(d.createdAt);
-                            if (!nowPost || date > nowPost.date) nowPost = {
-                                body: d.body,
-                                date: date
-                            };
-                            return;
-                        }
-                        if (d.category.name.toLowerCase() === 'drafts') return;
-
-                        const isNote = d.category.name.toLowerCase() === 'notes';
-                        const tags = [repoSlug];
-                        d.labels.nodes.forEach(l => {
-                            const lSlug = slugify(l.name).substring(0, 3);
-                            tags.push(lSlug);
-                            if (!tagDisplayMap[lSlug] && !config.github.tag_overrides?.[lSlug]) {
-                                tagDisplayMap[lSlug] = l.name.toUpperCase().substring(0, 3);
+                        allData.push({
+                            sourceName: source.name,
+                            type: type,
+                            service: 'github',
+                            owner: source.owner,
+                            repo: repo,
+                            date: new Date(item.createdAt || item.publishedAt),
+                            title: item.title || item.name || item.tagName,
+                            url: item.url,
+                            body: item.body || item.description || "",
+                            tags: [...new Set([...tags, ...groups])],
+                            metrics: {
+                                comments: item.comments?.totalCount || 0,
+                                reactions: item.reactions?.totalCount || 0
                             }
                         });
-                        pushItem(d, isNote ? 'note' : 'article', tags);
-                    });
-                }
+                    };
 
-                if (enableIssues && issues) {
-                    issues.nodes.forEach(i => {
-                        const tags = [repoSlug, 'issue'];
-                        i.labels.nodes.forEach(l => tags.push(slugify(l.name).substring(0, 3)));
-                        pushItem(i, 'article', tags);
-                    });
-                }
+                    if (enableDiscussions && discussions) {
+                        discussions.nodes.forEach(d => {
+                            // "Now" Page Logic
+                            if (pagesRepo && fullRepoName === pagesRepo && d.category.name.toLowerCase() === 'announcements') {
+                                const date = new Date(d.createdAt);
+                                if (!nowPost || date > nowPost.date) nowPost = {
+                                    body: d.body,
+                                    date: date
+                                };
+                                return;
+                            }
+                            if (d.category.name.toLowerCase() === 'now') {
+                                const date = new Date(d.createdAt);
+                                if (!nowPost || date > nowPost.date) nowPost = {
+                                    body: d.body,
+                                    date: date
+                                };
+                                return;
+                            }
+                            if (d.category.name.toLowerCase() === 'drafts') return;
 
-                if (enableReleases && releases) {
-                    releases.nodes.forEach(r => pushItem(r, 'release', ['commits', repoSlug]));
+                            const isNote = d.category.name.toLowerCase() === 'notes';
+                            const tags = [repoSlug];
+                            d.labels.nodes.forEach(l => {
+                                const lSlug = slugify(l.name).substring(0, 3);
+                                tags.push(lSlug);
+                                if (!tagDisplayMap[lSlug] && !config.github.tag_overrides?.[lSlug]) {
+                                    tagDisplayMap[lSlug] = l.name.toUpperCase().substring(0, 3);
+                                }
+                            });
+                            pushItem(d, isNote ? 'note' : 'article', tags);
+                        });
+
+                        if (discussions.pageInfo.hasNextPage) {
+                            endCursor = discussions.pageInfo.endCursor;
+                        } else {
+                            hasNextPage = false;
+                        }
+                    } else {
+                        hasNextPage = false;
+                    }
+
+                    if (firstRun) {
+                        if (enableIssues && issues) {
+                            issues.nodes.forEach(i => {
+                                const tags = [repoSlug, 'issue'];
+                                i.labels.nodes.forEach(l => tags.push(slugify(l.name).substring(0, 3)));
+                                pushItem(i, 'article', tags);
+                            });
+                        }
+
+                        if (enableReleases && releases) {
+                            releases.nodes.forEach(r => pushItem(r, 'release', ['commits', repoSlug]));
+                        }
+                        firstRun = false;
+                    }
+
+                } catch (e) {
+                    console.error(`GH Error ${repo}:`, e.message);
+                    hasNextPage = false;
                 }
-            } catch (e) {
-                console.error(`GH Error ${repo}:`, e.message);
             }
         }
     }
