@@ -161,6 +161,13 @@ async function fetchGitHub() {
                                 }
                             }
                         }
+
+                        // If the repo is part of a group, remove the individual repo tag
+                        let finalTags = [...tags, ...groups];
+                        if (groups.length > 0) {
+                            finalTags = finalTags.filter(t => t !== repoSlug);
+                        }
+
                         allData.push({
                             sourceName: source.name,
                             type: type,
@@ -171,7 +178,7 @@ async function fetchGitHub() {
                             title: item.title || item.name || item.tagName,
                             url: item.url,
                             body: item.body || item.description || "",
-                            tags: [...new Set([...tags, ...groups])],
+                            tags: [...new Set(finalTags)],
                             metrics: {
                                 comments: item.comments?.totalCount || 0,
                                 reactions: item.reactions?.totalCount || 0
