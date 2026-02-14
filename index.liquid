@@ -24,6 +24,10 @@
     {% for feed in feeds %}<link rel="alternate" type="{{ feed.mime }}" title="{{ feed.title }}" href="{{ feed.file }}" />
     {% endfor %}
 
+    <!-- Syntax Highlighting (Highlight.js) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+
     {% if analytics.plausible.enabled %}<!-- Plausible analytics -->
     <script defer data-domain="{{ analytics.plausible.domain }}" src="{{ analytics.plausible.src }}"></script>
     {% endif %}
@@ -156,8 +160,45 @@
         .bio { font-family: var(--f-sans); font-size: 1rem; color: var(--c-sub); margin-bottom: 1.5rem; }
 
         /* Search */
-        .search-container { visibility: hidden; margin-top: 1rem; margin-bottom: 0.5rem; width: 100%; max-width: 300px; margin-inline: auto; position: relative; }
-        body:has(#toggle-search:checked) .search-container { visibility: visible; }
+        .search-container { visibility: hidden; height: 0; opacity: 0; overflow: hidden; margin-top: 1rem; width: 100%; max-width: 300px; margin-inline: auto; position: relative; transition: all 0.3s ease; }
+        body:has(#toggle-search:checked) .search-container { visibility: visible; height: auto; opacity: 1; margin-bottom: 0.5rem; }
+        
+        /* Activity Heatmap */
+        .activity-container { visibility: hidden; height: 0; opacity: 0; overflow: hidden; margin-top: 1rem; width: 100%; transition: all 0.3s ease; }
+        body:has(#toggle-activity:checked) .activity-container { visibility: visible; height: auto; opacity: 1; margin-bottom: 2rem; padding: 4px 0; }
+        
+        .heatmap-grid { display: grid; grid-template-rows: repeat(7, 10px); grid-auto-flow: column; grid-auto-columns: 10px; gap: 3px; justify-content: center; padding: 4px; }
+        .heat-box { width: 10px; height: 10px; border-radius: 2px; background-color: color-mix(in oklch, var(--c-paper), var(--c-text) 10%); transition: all 0.2s; cursor: pointer; }
+        .heat-box:hover { outline: 1px solid var(--c-accent); outline-offset: 1px; }
+        .heat-box.selected { outline: 2px solid var(--c-accent); outline-offset: 1px; z-index: 1; }
+        
+        .heat-box.level-1 { background-color: color-mix(in oklch, var(--c-paper), var(--c-accent) 30%); }
+        .heat-box.level-2 { background-color: color-mix(in oklch, var(--c-paper), var(--c-accent) 55%); }
+        .heat-box.level-3 { background-color: color-mix(in oklch, var(--c-paper), var(--c-accent) 80%); }
+        .heat-box.level-4 { background-color: var(--c-accent); }
+        
+        /* Grayscale levels for non-matching days */
+        .heat-box.mismatch { filter: grayscale(1) opacity(0.3); }
+        .heat-box.mismatch.level-0 { background-color: color-mix(in oklch, var(--c-paper), var(--c-text) 5%); }
+        .heat-box.mismatch.level-1 { background-color: color-mix(in oklch, var(--c-paper), var(--c-text) 20%); }
+        .heat-box.mismatch.level-2 { background-color: color-mix(in oklch, var(--c-paper), var(--c-text) 35%); }
+        .heat-box.mismatch.level-3 { background-color: color-mix(in oklch, var(--c-paper), var(--c-text) 50%); }
+        .heat-box.mismatch.level-4 { background-color: color-mix(in oklch, var(--c-paper), var(--c-text) 65%); }
+        
+        .heatmap-meta { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; max-width: 600px; margin: 0.75rem auto 0; font-family: var(--f-sans); font-size: 0.7rem; color: var(--c-sub); gap: 2rem; }
+        .heatmap-stats-wrapper { display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-start; }
+        .year-selector { display: flex; gap: 0.75rem; color: var(--c-sub); }
+        .year-btn { cursor: pointer; transition: color 0.2s; background: none; border: none; font: inherit; color: inherit; padding: 0; }
+        .year-btn:hover { color: var(--c-accent); }
+        .year-btn.active { color: var(--c-accent); font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+
+        .heatmap-legend { display: flex; align-items: center; gap: 4px; padding-top: 2px; }
+        .heatmap-legend .heat-box { width: 8px; height: 8px; cursor: default; }
+        .heatmap-legend .heat-box:hover { outline: none; }
+
+        /* Highlight */
+        mark { background: color-mix(in oklch, var(--c-accent), transparent 80%); color: var(--c-text); border-bottom: 2px solid var(--c-accent); border-radius: 2px; padding: 0 1px; }
+
         #search-input { width: 100%; padding: 0.5rem 1rem; border: 1px solid color-mix(in oklch, var(--c-text), transparent 80%); border-radius: 2rem; background: var(--c-paper); color: var(--c-text); font-family: var(--f-sans); font-size: 0.9rem; transition: border-color 0.2s; }
         #search-input:focus { outline: none; border-color: var(--c-accent); }
         #search-input::placeholder { color: var(--c-sub); opacity: 0.7; }
@@ -192,8 +233,9 @@
         .filter-separator { color: color-mix(in oklch, var(--c-sub), transparent 80%); }
 
         /* Tag Styles */
-        .filter-tag { cursor: pointer; user-select: none; transition: color 0.2s; position: relative; }
-        .filter-tag:hover { color: var(--c-text); }
+        .filter-tag { cursor: pointer; user-select: none; transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s; position: relative; display: inline-block; }
+        .filter-tag:hover { color: var(--c-text); transform: translateY(-1px); }
+        .filter-tag:active { transform: scale(0.95); }
 
         /* The 'x' placeholder (Always reserve space) */
         .filter-tag::after {
@@ -238,21 +280,34 @@
             text-underline-offset: 4px;
         }
 
-        /* Active States (When ANY filter is selected OR search is active) */
+        /* Activity Toggle Styling */
+        body:has(#toggle-activity:checked) label[for="toggle-activity"] {
+            color: var(--c-text);
+            text-decoration: underline;
+            text-decoration-color: var(--c-accent);
+            text-decoration-thickness: 2px;
+            text-underline-offset: 4px;
+        }
+
+        /* Active States (When ANY filter is selected OR search is active OR activity toggle active) */
         body:has(.filter-check:checked) #clear-filters,
-        body:has(#toggle-search:checked) #clear-filters { display: block; }
+        body:has(#toggle-search:checked) #clear-filters,
+        body:has(#toggle-activity:checked) #clear-filters { display: block; }
 
         body:has(.filter-check:checked) .collapse-label,
-        body:has(#toggle-search:checked) .collapse-label { display: block; }
+        body:has(#toggle-search:checked) .collapse-label,
+        body:has(#toggle-activity:checked) .collapse-label { display: block; }
 
         /* Separator Logic */
-        /* Between Clear and Hide: Visible if filter checked OR search active */
+        /* Between Clear and Hide: Visible if filter checked OR search active OR activity active */
         body:has(.filter-check:checked) .sep-clear-collapse,
-        body:has(#toggle-search:checked) .sep-clear-collapse { display: inline; }
+        body:has(#toggle-search:checked) .sep-clear-collapse,
+        body:has(#toggle-activity:checked) .sep-clear-collapse { display: inline; }
 
-        /* Between Hide and Sort: Visible if filter checked OR search active */
+        /* Between Hide and Sort: Visible if filter checked OR search active OR activity active */
         body:has(.filter-check:checked) .sep-collapse-sort,
-        body:has(#toggle-search:checked) .sep-collapse-sort { display: inline; }
+        body:has(#toggle-search:checked) .sep-collapse-sort,
+        body:has(#toggle-activity:checked) .sep-collapse-sort { display: inline; }
 
         /* Collapse Toggle (Hide Filtered) Styling */
         .collapse-label { position: relative; }
@@ -301,12 +356,123 @@
         /* FILTERING LOGIC */
         /* Dim non-matches */
         body:has(.filter-check:checked) .entry { opacity: 0.1; filter: grayscale(100%) blur(1px); }
+        .entry.filtered-out { opacity: 0.1; filter: grayscale(100%) blur(1px); }
 
         /* Hide empty years completely to remove space */
         body:has(#toggle-collapse:checked):has(.filter-check:checked) .year-block { display: none; }
+        body:has(#toggle-collapse:checked) .entry.filtered-out { display: none; }
+        body:has(#toggle-collapse:checked) .year-block:not(:has(.entry:not(.filtered-out))) { display: none; }
 
-        /* Hide entries */
-        body:has(#toggle-collapse:checked):has(.filter-check:checked) .entry { display: none; }
+        /* Restore matches */
+        {% for filter in filters %}
+        body:has(#f-{{ filter.id }}:checked) label[for="f-{{ filter.id }}"] {
+            color: var(--c-text);
+            text-decoration: underline;
+            text-decoration-color: var(--c-accent);
+            text-decoration-thickness: 2px;
+            text-underline-offset: 4px;
+        }
+
+        /* Make the 'x' visible */
+        body:has(#f-{{ filter.id }}:checked) label[for="f-{{ filter.id }}"]::after { color: var(--c-sub); }
+        body:has(#f-{{ filter.id }}:checked) label[for="f-{{ filter.id }}"]:hover::after { color: var(--c-accent); }
+
+        /* Visiblity Restoration - Only if NOT a search mismatch */
+        body:has(#f-{{ filter.id }}:checked) .entry.tag-{{ filter.id }}:not(.no-match) { opacity: 1; filter: none; }
+        body:has(#toggle-collapse:checked):has(#f-{{ filter.id }}:checked) .entry.tag-{{ filter.id }}:not(.no-match) { display: grid; opacity: 1; filter: none; }
+        /* Restore Year Block if it contains a matching tag that is ALSO a search match */
+        body:has(#toggle-collapse:checked):has(#f-{{ filter.id }}:checked) .year-block:has(.tag-{{ filter.id }}:not(.no-match)) { display: block; }
+        {% endfor %}
+
+        /* SEARCH FILTERING */
+        .entry.no-match { opacity: 0.1; filter: grayscale(100%) blur(1px); }
+
+        /* Only hide no-match if toggle-collapse is checked */
+        body:has(#toggle-collapse:checked) .entry.no-match { display: none; }
+        body:has(#toggle-collapse:checked) .year-block:not(:has(.entry:not(.no-match))) { display: none; }
+
+        /* ENTRY STYLES */
+        /* Grid required for collapse animation */
+        .year-block, .entry { opacity: 1; transition: var(--trans-layout); scroll-margin-top: 100px; }
+        .year-inner, .entry-inner { min-height: 0; overflow: hidden; }
+
+        .year-title { font-family: var(--f-sans); font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; color: var(--c-text); margin-bottom: 2rem; padding-bottom: 0.25rem; display: block; width: fit-content; margin-left: auto; scroll-margin-top: 5rem; }
+
+        .entry-row { display: flex; align-items: baseline; width: 100%; gap: 0.5rem; max-width: 100%; position: relative; }
+        .entry-row .permalink { position: absolute; right: -1.5rem; top: 0.15rem; margin: 0; }
+        .entry-title { font-size: 1.35rem; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1; min-width: 0; }
+        .entry-title:hover { text-decoration: underline; text-underline-offset: 4px; color: var(--c-accent); }
+        .dots { flex-grow: 1; border-bottom: 2px dotted var(--c-sub); opacity: 0.4; position: relative; flex-shrink: 0; min-width: 1rem; }
+        .meta-group { display: flex; align-items: center; gap: 1rem; flex-shrink: 0; }
+        .meta-stat { display: flex; align-items: center; gap: 0.3em; font-family: var(--f-sans); font-size: 0.75rem; color: var(--c-sub); font-weight: 500; text-decoration: none; }
+        .meta-stat svg { width: 1em; height: 1em; stroke: currentColor; stroke-width: 2; fill: none; }
+        .entry:hover .meta-stat { color: var(--c-text); }
+        a.meta-stat:hover { color: var(--c-accent); text-decoration: underline; }
+        .entry-date { font-family: var(--f-sans); font-weight: 500; font-size: 0.85rem; color: var(--c-text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .entry-summary { display: block; margin-top: 0.25rem; font-size: 0.95rem; color: var(--c-sub); max-width: 90%; line-height: 1.4; text-wrap: pretty; }
+
+        /* Permalinks */
+        .permalink { opacity: 0; margin-right: 0.75rem; color: var(--c-accent); font-family: var(--f-mono); font-size: 0.8rem; transition: opacity 0.2s; user-select: none; flex-shrink: 0; }
+        .entry:hover .permalink { opacity: 0.5; }
+        .permalink:hover { opacity: 1 !important; text-decoration: none; }
+
+        /* Rich Cards */
+        .entry-card { display: flex; gap: 1.5rem; border: 1px solid color-mix(in oklch, var(--c-text), transparent 90%); border-radius: 6px; padding: 1rem; margin-top: 0.5rem; transition: border-color 0.2s; background: color-mix(in oklch, var(--c-paper), var(--c-table) 30%); }
+        .entry-card:hover { border-color: var(--c-accent); }
+
+        /* Collapse Toggle (Hide Filtered) Styling */
+        .collapse-label { position: relative; }
+        .collapse-label::after {
+            content: "\00d7";
+            display: inline-block;
+            color: transparent;
+            font-weight: 400;
+            margin-left: 3px;
+            transition: color 0.2s;
+        }
+
+        body:has(#toggle-collapse:checked) .collapse-label {
+            color: var(--c-text);
+            text-decoration: underline;
+            text-decoration-color: var(--c-accent);
+            text-decoration-thickness: 2px;
+            text-underline-offset: 4px;
+        }
+        body:has(#toggle-collapse:checked) .collapse-label::after { color: var(--c-sub); }
+        body:has(#toggle-collapse:checked) .collapse-label:hover::after { color: var(--c-accent); }
+
+        /* SORTING LOGIC */
+        /* Flex containers for reordering */
+        .timeline-feed { display: flex; flex-direction: column; gap: 4rem; }
+
+        /* The article wrapper allows sorting articles without moving the year title */
+        .year-articles { display: flex; flex-direction: column; gap: 2.5rem; }
+
+        /* Reverse Direction when Checked */
+        body:has(#sort-order:checked) .timeline-feed { flex-direction: column-reverse; }
+        body:has(#sort-order:checked) .year-articles { flex-direction: column-reverse; }
+
+        /* Sort Label Styling */
+        .sort-label { position: relative; user-select: none; }
+        .sort-label::before { content: "Sort: Newest"; }
+        body:has(#sort-order:checked) .sort-label::before { content: "Sort: Oldest"; }
+        body:has(#sort-order:checked) .sort-label {
+            color: var(--c-text);
+            text-decoration: underline;
+            text-decoration-color: var(--c-accent);
+            text-decoration-thickness: 2px;
+            text-underline-offset: 4px;
+        }
+
+        /* FILTERING LOGIC */
+        /* Dim non-matches */
+        body:has(.filter-check:checked) .entry { opacity: 0.1; filter: grayscale(100%) blur(1px); }
+        .entry.filtered-out { opacity: 0.1; filter: grayscale(100%) blur(1px); }
+
+        /* Hide empty years completely to remove space */
+        body:has(#toggle-collapse:checked):has(.filter-check:checked) .year-block { display: none; }
+        body:has(#toggle-collapse:checked) .entry.filtered-out { display: none; }
+        body:has(#toggle-collapse:checked) .year-block:not(:has(.entry:not(.filtered-out))) { display: none; }
 
         /* Restore matches */
         {% for filter in filters %}
@@ -372,10 +538,24 @@
         /* Truncation / Read More */
         .content-crop { max-height: 300px; overflow: hidden; position: relative; transition: max-height 0.4s ease; }
         .content-crop.expanded { max-height: none; overflow: visible; }
-        .content-crop::after { content: ""; position: absolute; bottom: 0; left: 0; width: 100%; height: 80px; background: linear-gradient(to bottom, transparent, var(--c-paper)); pointer-events: none; opacity: 1; transition: opacity 0.3s; }
-        .content-crop.expanded::after { opacity: 0; pointer-events: none; }
-        .read-more-btn { display: block; width: 100%; border: none; background: color-mix(in oklch, var(--c-table), transparent 20%); color: var(--c-sub); font-family: var(--f-sans); font-size: 0.8rem; padding: 0.5rem; cursor: pointer; margin-top: -1rem; position: relative; z-index: 2; border-radius: 0 0 4px 4px; transition: color 0.2s, background 0.2s; }
-        .read-more-btn:hover { color: var(--c-accent); background: var(--c-table); }
+        
+        /* Only show fade if the crop is active and not expanded */
+        .content-crop.is-truncated::after { 
+            content: ""; position: absolute; bottom: 0; left: 0; width: 100%; height: 80px; 
+            background: linear-gradient(to bottom, transparent, var(--c-paper)); 
+            pointer-events: none; opacity: 1; transition: opacity 0.3s; 
+        }
+        .content-crop.expanded::after { opacity: 0; }
+
+        .read-more-btn { 
+            display: block; width: 100%; border: none; 
+            background: color-mix(in oklch, var(--c-paper), var(--c-text) 5%); 
+            color: var(--c-sub); font-family: var(--f-sans); font-size: 0.8rem; 
+            padding: 0.5rem; cursor: pointer; margin-top: -1rem; position: relative; 
+            z-index: 2; border-radius: 0 0 4px 4px; transition: all 0.2s;
+            border-top: 1px solid color-mix(in oklch, var(--c-text), transparent 94%);
+        }
+        .read-more-btn:hover { color: var(--c-accent); background: color-mix(in oklch, var(--c-paper), var(--c-text) 10%); }
         .hidden-btn { display: none; }
 
         /* Markdown P tag reset in summaries */
@@ -392,8 +572,29 @@
         .entry.tag-rel { margin-bottom: 2rem; }
         .rel-repo { font-family: var(--f-mono); font-weight: 700; font-size: 0.95rem; color: var(--c-text); }
         .rel-version { font-family: var(--f-mono); font-size: 0.75rem; color: var(--c-accent); background: color-mix(in oklch, var(--c-accent), transparent 90%); padding: 1px 4px; border-radius: 3px; margin-left: 0.5ch; }
-        .rel-msg { font-family: var(--f-mono); font-size: 0.8rem; color: var(--c-sub); margin-top: 0.25rem; display: block; white-space: pre-wrap; }
+        .rel-msg { font-size: 0.9rem; color: var(--c-text); margin-top: 0.5rem; line-height: 1.5; }
+        .rel-msg h1, .rel-msg h2, .rel-msg h3 { margin-top: 1.5rem; margin-bottom: 0.75rem; font-weight: 700; line-height: 1.2; color: var(--c-text); }
+        .rel-msg h1 { font-size: 1.4rem; border-bottom: 1px solid color-mix(in oklch, var(--c-text), transparent 90%); padding-bottom: 0.3rem; }
+        .rel-msg h2 { font-size: 1.2rem; }
+        .rel-msg h3 { font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--c-accent); }
+        .rel-msg p { margin-bottom: 1rem; }
+        .rel-msg ul, .rel-msg ol { margin-bottom: 1rem; padding-left: 1.5rem; }
+        .rel-msg li { margin-bottom: 0.25rem; }
+        .rel-msg li::marker { color: var(--c-accent); }
+        .rel-msg pre { background: var(--c-table); padding: 1rem; border-radius: 4px; overflow-x: auto; margin: 1rem 0; border: 1px solid color-mix(in oklch, var(--c-text), transparent 90%); }
+        .rel-msg code { font-family: var(--f-mono); font-size: 0.85em; background: color-mix(in oklch, var(--c-text), transparent 95%); padding: 0.2em 0.4em; border-radius: 3px; }
+        .rel-msg pre code { background: none; padding: 0; font-size: 0.85rem; }
         .rel-repo:hover { text-decoration: underline; text-decoration-color: var(--c-accent); text-underline-offset: 3px; }
+
+        .lang-badge { font-family: var(--f-sans); font-size: 0.65rem; font-weight: 700; color: var(--c-sub); border: 1px solid color-mix(in oklch, var(--c-text), transparent 90%); padding: 1px 6px; border-radius: 10px; margin-left: 0.75ch; vertical-align: middle; display: inline-flex; align-items: center; gap: 4px; }
+        .lang-badge::before { content: ""; width: 6px; height: 6px; background-color: var(--lang-color, var(--c-accent)); border-radius: 50%; display: inline-block; }
+
+        /* MICRO-INTERACTIONS */
+        .entry { transition: opacity 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.4s ease; transform: translateY(0); }
+        body:has(.filter-check:checked) .entry.no-match { transform: translateY(10px); }
+        .filter-tag { transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s; display: inline-block; }
+        .filter-tag:active { transform: scale(0.95); }
+        .filter-tag:hover { color: var(--c-text); transform: translateY(-1px); }
 
         /* Mobile */
         @media (max-width: 650px) {
@@ -434,6 +635,7 @@
     <input type="radio" name="theme" id="theme-dark" class="logic-check">
     <input type="checkbox" id="toggle-collapse" class="logic-check">
     <input type="checkbox" id="toggle-search" class="logic-check">
+    <input type="checkbox" id="toggle-activity" class="logic-check">
     <input type="checkbox" id="sort-order" class="logic-check">
 
     {% for tag in filters %}
@@ -480,6 +682,8 @@
                     </div>
 
                     <div class="clear-container">
+                        <label for="toggle-activity" class="ui-link">Activity</label>
+                        <span class="filter-separator">&middot;</span>
                         <label for="toggle-search" class="ui-link">Search</label>
                         <span class="filter-separator">&middot;</span>
                         <button id="clear-filters" class="ui-link">Clear Selection</button>
@@ -493,6 +697,25 @@
                         <input type="text" id="search-input" placeholder="Search entries...">
                         <button id="search-clear" aria-label="Clear search">&times;</button>
                     </div>
+
+                     <div class="activity-container" id="heatmap-root">
+                        <div class="heatmap-grid" id="heatmap-grid"></div>
+                        <div class="heatmap-meta">
+                            <div class="heatmap-stats-wrapper">
+                                <span id="heatmap-stats"></span>
+                                <div id="year-selector" class="year-selector"></div>
+                            </div>
+                            <div class="heatmap-legend">
+                                <span>Less</span>
+                                <div class="heat-box level-0"></div>
+                                <div class="heat-box level-1"></div>
+                                <div class="heat-box level-2"></div>
+                                <div class="heat-box level-3"></div>
+                                <div class="heat-box level-4"></div>
+                                <span>More</span>
+                            </div>
+                        </div>
+                     </div>
                 </div>
             </header>
 
@@ -571,12 +794,19 @@
 
                             {% elsif item.type == 'release' %}
                                 <div class="entry-row">
-                                    <span><a href="{{ item.url }}" class="rel-repo">{{ item.owner }}/{{ item.repo }}</a><span class="rel-version">{{ item.title }}</span></span>
+                                    <span>
+                                        <a href="{{ item.url }}" class="rel-repo">{{ item.owner }}/{{ item.repo }}</a>
+                                        <span class="rel-version">{{ item.title }}</span>
+                                        {% if item.language %}<span class="lang-badge" style="--lang-color: {{ item.language.color }}">{{ item.language.name }}</span>{% endif %}
+                                    </span>
                                     <span class="dots"></span>
                                     <time class="entry-date">{{ item.date | date: "%b %d" }}</time>
                                     <a href="#{{ item.id }}" class="permalink" title="Link to this entry">#</a>
                                 </div>
-                                <code class="rel-msg">{{ item.body | split: "\n" | first | truncate: 100 }}</code>
+                                <div class="content-crop">
+                                    <div class="rel-msg markdown-body">{{ item.body | markdown }}</div>
+                                </div>
+                                <button class="read-more-btn hidden-btn" aria-label="Show full content">Show More</button>
                             {% endif %}
                             </div>
                         </article>
@@ -590,6 +820,9 @@
     </main>
 
     <script>
+        const selectedDates = new Set();
+        let currentHeatmapYear = 'rolling';
+
         // Restore Checkbox States and Theme on Load
         const init = () => {
             const savedTheme = localStorage.getItem('theme') || 'theme-system';
@@ -604,6 +837,16 @@
                     if(cb) cb.checked = true;
                 });
             }
+
+            const dates = params.get('dates');
+            if (dates) {
+                dates.split(',').forEach(d => selectedDates.add(d));
+            }
+
+            if (params.get('hyear')) {
+                currentHeatmapYear = params.get('hyear');
+            }
+
             if(params.get('collapse')) document.getElementById('toggle-collapse').checked = true;
             if(params.get('sort') === 'oldest') document.getElementById('sort-order').checked = true;
 
@@ -617,8 +860,11 @@
                 }
             }
 
-            // Generate Sticky Nav
-            generateTimelineNav();
+            // Generate Heatmap (must happen before updateState)
+            generateHeatmap();
+
+            // Initial visibility check
+            updateState();
         };
 
         // Sync State
@@ -627,13 +873,65 @@
             const activeTags = [];
             document.querySelectorAll('.filter-check:checked').forEach(cb => activeTags.push(cb.id.replace('f-', '')));
 
+            const searchTerm = document.getElementById('search-input').value.trim().toLowerCase();
+
+            // 1. Filter Entries
+            let visibleCount = 0;
+            const allEntries = document.querySelectorAll('.entry');
+            allEntries.forEach(entry => {
+                const entryDate = entry.id.split('-').slice(1, 4).join('-');
+                const hasTagMatch = activeTags.length === 0 || activeTags.some(t => entry.classList.contains('tag-' + t));
+                const hasSearchMatch = !entry.classList.contains('no-match');
+                const hasDateMatch = selectedDates.size === 0 || selectedDates.has(entryDate);
+
+                if (hasTagMatch && hasSearchMatch && hasDateMatch) {
+                    entry.classList.remove('filtered-out');
+                    visibleCount++;
+                } else {
+                    entry.classList.add('filtered-out');
+                }
+            });
+
+            // 2. Update Heatmap Visuals
+            const heatmapBoxes = document.querySelectorAll('.heat-box[data-date]');
+            heatmapBoxes.forEach(box => {
+                const date = box.getAttribute('data-date');
+                box.classList.toggle('selected', selectedDates.has(date));
+                
+                // Check if this day has ANY entry that matches current TAGS and SEARCH
+                const dayEntries = Array.from(allEntries).filter(e => e.id.split('-').slice(1, 4).join('-') === date);
+                const hasMatch = dayEntries.some(e => {
+                    const tMatch = activeTags.length === 0 || activeTags.some(t => e.classList.contains('tag-' + t));
+                    const sMatch = !e.classList.contains('no-match');
+                    return tMatch && sMatch;
+                });
+
+                box.classList.toggle('mismatch', !hasMatch && dayEntries.length > 0);
+            });
+
+            // Update Year Selector active state
+            document.querySelectorAll('.year-btn').forEach(btn => {
+                const year = btn.getAttribute('data-year');
+                btn.classList.toggle('active', year === currentHeatmapYear);
+            });
+
+            // 3. Update Stats Text
+            const statsEl = document.getElementById('heatmap-stats');
+            if (selectedDates.size > 0) {
+                const dateStr = Array.from(selectedDates).sort().join(', ');
+                statsEl.textContent = `Showing ${visibleCount} items from ${selectedDates.size === 1 ? dateStr : selectedDates.size + ' selected dates'}`;
+            } else {
+                statsEl.textContent = `${visibleCount} items visible out of ${allEntries.length} total`;
+            }
+
+            // 4. Update URL
             if (activeTags.length > 0) params.set('tags', activeTags.join(','));
+            if (selectedDates.size > 0) params.set('dates', Array.from(selectedDates).join(','));
+            if (currentHeatmapYear !== 'rolling') params.set('hyear', currentHeatmapYear);
             if (document.getElementById('toggle-collapse').checked) params.set('collapse', '1');
             if (document.getElementById('sort-order').checked) params.set('sort', 'oldest');
-
             if (document.getElementById('toggle-search').checked) {
-                const term = document.getElementById('search-input').value.trim();
-                params.set('search', term ? term : '1');
+                params.set('search', searchTerm ? searchTerm : '1');
             }
 
             let currentTheme = 'theme-system';
@@ -649,14 +947,19 @@
 
         document.getElementById('clear-filters').addEventListener('click', () => {
             document.querySelectorAll('.filter-check').forEach(cb => cb.checked = false);
-            document.getElementById('toggle-collapse').checked = false;
-            document.getElementById('toggle-search').checked = false;
+            selectedDates.clear();
 
             // Clear search
             const searchInput = document.getElementById('search-input');
             if (searchInput) {
                 searchInput.value = '';
-                document.querySelectorAll('.entry').forEach(entry => entry.classList.remove('no-match'));
+                document.querySelectorAll('.entry').forEach(entry => {
+                    entry.classList.remove('no-match');
+                    if (entry.hasAttribute('data-original-text')) {
+                         const contentElements = entry.querySelectorAll('.entry-title, .entry-summary, .note-text, .rel-repo, .rel-msg');
+                         contentElements.forEach(el => el.innerHTML = el.getAttribute('data-original-text'));
+                    }
+                });
             }
 
             updateState();
@@ -667,37 +970,236 @@
         // Search
         const searchInput = document.getElementById('search-input');
         if (searchInput) {
+            const highlightMatch = (text, term) => {
+                if (!term) return text;
+                const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+                return text.replace(regex, '<mark>$1</mark>');
+            };
+
             searchInput.addEventListener('input', (e) => {
-                const term = e.target.value.toLowerCase();
+                const term = e.target.value.trim().toLowerCase();
                 document.querySelectorAll('.entry').forEach(entry => {
-                    const text = entry.textContent.toLowerCase();
-                    if (term.length === 0 || text.includes(term)) {
+                    const contentElements = entry.querySelectorAll('.entry-title, .entry-summary, .note-text, .rel-repo, .rel-msg');
+                    let matches = false;
+                    
+                    contentElements.forEach(el => {
+                        const originalText = el.getAttribute('data-original-text') || el.innerHTML;
+                        if (!el.hasAttribute('data-original-text')) el.setAttribute('data-original-text', originalText);
+                        
+                        const plainText = el.textContent.toLowerCase();
+                        if (term && plainText.includes(term)) {
+                            matches = true;
+                            el.innerHTML = highlightMatch(originalText, term);
+                        } else {
+                            el.innerHTML = originalText;
+                        }
+                    });
+
+                    if (term.length === 0 || matches || entry.textContent.toLowerCase().includes(term)) {
                         entry.classList.remove('no-match');
                     } else {
                         entry.classList.add('no-match');
                     }
                 });
-                updateTimelineNavVisibility();
                 updateState();
             });
 
             document.getElementById('toggle-search').addEventListener('change', (e) => {
                 if (!e.target.checked) {
                     searchInput.value = '';
+                    document.querySelectorAll('[data-original-text]').forEach(el => {
+                        el.innerHTML = el.getAttribute('data-original-text');
+                    });
                     document.querySelectorAll('.entry').forEach(entry => entry.classList.remove('no-match'));
-                    updateTimelineNavVisibility();
+                    updateState();
                 }
             });
 
             document.getElementById('search-clear').addEventListener('click', () => {
                 searchInput.value = '';
                 searchInput.focus();
-                // Trigger input event to update filters
                 searchInput.dispatchEvent(new Event('input'));
             });
         }
 
+        // Heatmap
+        function generateHeatmap() {
+            const grid = document.getElementById('heatmap-grid');
+            const yearSelector = document.getElementById('year-selector');
+            if (!grid || !yearSelector) return;
+            grid.innerHTML = '';
+            yearSelector.innerHTML = '';
+
+            const allEntries = document.querySelectorAll('.entry');
+            const years = new Set();
+            const activity = {};
+            
+            allEntries.forEach(entry => {
+                const dateParts = entry.id.split('-').slice(1, 4);
+                const dateId = dateParts.join('-');
+                const year = dateParts[0];
+                activity[dateId] = (activity[dateId] || 0) + 1;
+                years.add(year);
+            });
+
+            // Create Year Selector
+            const recentBtn = document.createElement('button');
+            recentBtn.className = 'year-btn';
+            recentBtn.textContent = 'Recent';
+            recentBtn.setAttribute('data-year', 'rolling');
+            recentBtn.onclick = () => {
+                currentHeatmapYear = 'rolling';
+                generateHeatmap();
+                updateState();
+            };
+            yearSelector.appendChild(recentBtn);
+
+            const sortedYears = Array.from(years).sort((a, b) => b - a);
+            sortedYears.forEach(year => {
+                const btn = document.createElement('button');
+                btn.className = 'year-btn';
+                btn.textContent = year;
+                btn.setAttribute('data-year', year);
+                btn.onclick = () => {
+                    currentHeatmapYear = year;
+                    generateHeatmap();
+                    updateState();
+                };
+                yearSelector.appendChild(btn);
+            });
+
+            // Determine Date Range
+            let startDate, endDate;
+            if (currentHeatmapYear === 'rolling') {
+                endDate = new Date();
+                startDate = new Date();
+                startDate.setFullYear(endDate.getFullYear() - 1);
+                // Adjust to the start of that week (Sunday)
+                startDate.setDate(startDate.getDate() - startDate.getDay());
+            } else {
+                startDate = new Date(currentHeatmapYear, 0, 1);
+                endDate = new Date(currentHeatmapYear, 11, 31);
+                // Adjust to the start of that week (Sunday)
+                startDate.setDate(startDate.getDate() - startDate.getDay());
+                // Adjust to the end of that week (Saturday)
+                endDate.setDate(endDate.getDate() + (6 - endDate.getDay()));
+            }
+            
+            const dayCount = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24));
+            const now = new Date();
+            now.setHours(0, 0, 0, 0);
+
+            for (let i = 0; i <= dayCount; i++) {
+                const d = new Date(startDate);
+                d.setDate(d.getDate() + i);
+                const dateId = d.toISOString().split('T')[0];
+                const count = activity[dateId] || 0;
+                const isFuture = d > now;
+                const isOutsideYear = currentHeatmapYear !== 'rolling' && d.getFullYear().toString() !== currentHeatmapYear;
+                
+                const box = document.createElement('div');
+                box.className = 'heat-box';
+                box.setAttribute('data-date', dateId);
+
+                if (isOutsideYear) {
+                    box.style.visibility = 'hidden';
+                    box.style.pointerEvents = 'none';
+                } else if (isFuture) {
+                    box.classList.add('level-0');
+                    box.style.opacity = '0.2';
+                    box.style.cursor = 'default';
+                    box.title = `Future date: ${dateId}`;
+                } else {
+                    if (count > 0) {
+                        const level = Math.min(4, Math.ceil(count / 2));
+                        box.classList.add('level-' + level);
+                        box.title = `${count} entries on ${dateId}`;
+                    } else {
+                        box.classList.add('level-0');
+                        box.title = `No activity on ${dateId}`;
+                    }
+
+                    box.addEventListener('click', () => {
+                        if (selectedDates.has(dateId)) {
+                            selectedDates.delete(dateId);
+                        } else {
+                            selectedDates.add(dateId);
+                        }
+                        updateState();
+                    });
+                }
+
+                grid.appendChild(box);
+            }
+        }
+
         // Sticky Nav & ScrollSpy
+        function generateTimelineNav() {
+            const nav = document.getElementById('timeline-nav');
+            const years = document.querySelectorAll('.year-block');
+            if (!nav) return;
+
+            nav.innerHTML = ''; 
+            years.forEach(year => {
+                const yearNum = year.id.replace('year-', '');
+                const link = document.createElement('a');
+                link.textContent = yearNum;
+                link.className = 'nav-year';
+                link.id = 'nav-link-' + yearNum;
+                link.onclick = () => {
+                    document.getElementById('year-' + yearNum).scrollIntoView({ behavior: 'smooth' });
+                };
+                nav.appendChild(link);
+            });
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const id = entry.target.id.replace('year-', '');
+                        document.querySelectorAll('.nav-year').forEach(n => n.classList.remove('active'));
+                        const activeLink = document.getElementById('nav-link-' + id);
+                        if (activeLink) activeLink.classList.add('active');
+                    }
+                });
+            }, { rootMargin: '-20% 0px -60% 0px' });
+
+            years.forEach(year => observer.observe(year));
+        }
+
+        function updateTimelineNavVisibility() {
+            const activeTagIds = Array.from(document.querySelectorAll('.filter-check:checked')).map(cb => cb.id.replace('f-', ''));
+            const hasTags = activeTagIds.length > 0;
+            const hasDates = selectedDates.size > 0;
+
+            document.querySelectorAll('.year-block').forEach(year => {
+                const yearNum = year.id.replace('year-', '');
+                const navLink = document.getElementById('nav-link-' + yearNum);
+                if (!navLink) return;
+
+                const entries = year.querySelectorAll('.entry');
+                let hasVisibleEntry = false;
+
+                for (const entry of entries) {
+                    const isSearchMatch = !entry.classList.contains('no-match');
+                    const entryDate = entry.id.split('-').slice(1, 4).join('-');
+                    
+                    let isTagMatch = !hasTags || activeTagIds.some(tagId => entry.classList.contains('tag-' + tagId));
+                    let isDateMatch = !hasDates || selectedDates.has(entryDate);
+
+                    if (isSearchMatch && isTagMatch && isDateMatch) {
+                        hasVisibleEntry = true;
+                        break;
+                    }
+                }
+
+                navLink.style.display = hasVisibleEntry ? 'block' : 'none';
+            });
+        }
+
+        init();
+        generateTimelineNav();
+        // initReadMore(); // This needs to be called after state updates too? Or just once.
+
         function generateTimelineNav() {
             const nav = document.getElementById('timeline-nav');
             const years = document.querySelectorAll('.year-block');
@@ -769,7 +1271,28 @@
             });
         }
 
+        // Read More Logic
+        const initReadMore = () => {
+            document.querySelectorAll('.content-crop').forEach(crop => {
+                const button = crop.nextElementSibling;
+                if (!button || !button.classList.contains('read-more-btn')) return;
+
+                // Simple check: if scrollHeight > clientHeight, we need a button
+                if (crop.scrollHeight > crop.clientHeight + 10) {
+                    button.classList.remove('hidden-btn');
+                    crop.classList.add('is-truncated');
+                }
+
+                button.addEventListener('click', () => {
+                    crop.classList.toggle('expanded');
+                    crop.classList.toggle('is-truncated', !crop.classList.contains('expanded'));
+                    button.textContent = crop.classList.contains('expanded') ? 'Show Less' : 'Show More';
+                });
+            });
+        };
+
         init();
+        initReadMore();
     </script>
 </body>
 </html>

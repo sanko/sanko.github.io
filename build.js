@@ -13,11 +13,20 @@ require('dotenv').config();
 // SETUP
 const config = require('./config.json');
 const emojiPlugin = require('markdown-it-emoji');
+const hljs = require('highlight.js');
 
 // Markdown parser (used inside Liquid filter)
 const md = new MarkdownIt({
         html: true,
-        linkify: true
+        linkify: true,
+        highlight: function (str, lang) {
+            if (lang && hljs.getLanguage(lang)) {
+                try {
+                    return hljs.highlight(str, { language: lang }).value;
+                } catch (__) {}
+            }
+            return ''; // use external default escaping
+        }
     })
     .use(emojiPlugin.full || emojiPlugin);
 
@@ -50,6 +59,35 @@ const tagDisplayMap = {
 };
 if (config.github?.tag_overrides) {
     Object.assign(tagDisplayMap, config.github.tag_overrides);
+}
+
+// Pre-populate tagDisplayMap with groups and repos from config
+if (config.github?.groups) {
+    for (const gName of Object.keys(config.github.groups)) {
+        tagDisplayMap[slugify(gName)] = gName;
+    }
+}
+if (config.github?.sources) {
+    for (const source of config.github.sources) {
+        for (const repo of source.repos) {
+            tagDisplayMap[slugify(repo)] = repo;
+        }
+    }
+}
+
+// CACHE SETUP
+const cacheFile = path.join(__dirname, '.cache.json');
+let cache = {};
+if (fs.existsSync(cacheFile)) {
+    try {
+        cache = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
+    } catch (e) {
+        console.error('Cache read error:', e.message);
+    }
+}
+
+function saveCache() {
+    fs.writeFileSync(cacheFile, JSON.stringify(cache, null, 2));
 }
 
 // HELPERS
@@ -107,6 +145,7 @@ async function fetchGitHub() {
 
     const query = `query($owner: String!, $name: String!, $after: String) {
       repository(owner: $owner, name: $name) {
+        primaryLanguage { name, color }
         discussions(first: 100, orderBy: {field: CREATED_AT, direction: DESC}, after: $after) {
           pageInfo { hasNextPage, endCursor }
           nodes { title, url, createdAt, body, author { login }, category { name }, labels(first: 5) { nodes { name } }, comments { totalCount }, reactions { totalCount } }
@@ -127,6 +166,16 @@ async function fetchGitHub() {
             let hasNextPage = true;
             let endCursor = null;
             let firstRun = true;
+
+            const cacheKey = `github-${source.owner}-${repo}`;
+            if (cache[cacheKey] && !process.env.REFRESH_CACHE) {
+                console.log(`Using cached data for ${repo}`);
+                // Rehydrate dates
+                cache[cacheKey].forEach(item => item.date = new Date(item.date));
+                allData.push(...cache[cacheKey]);
+                continue;
+            }
+            const repoData = [];
 
             while (hasNextPage) {
                 try {
@@ -160,7 +209,8 @@ async function fetchGitHub() {
                     const {
                         discussions,
                         issues,
-                        releases
+                        releases,
+                        primaryLanguage
                     } = json.data.repository;
                     const repoSlug = slugify(repo);
                     const fullRepoName = `${source.owner}/${repo}`;
@@ -186,12 +236,13 @@ async function fetchGitHub() {
                             finalTags = finalTags.filter(t => t !== repoSlug || groups.includes(t));
                         }
 
-                        allData.push({
+                        const itemData = {
                             sourceName: source.name,
                             type: type,
                             service: 'github',
                             owner: source.owner,
                             repo: repo,
+                            language: primaryLanguage,
                             date: new Date(item.createdAt || item.publishedAt),
                             title: item.title || item.name || item.tagName,
                             url: item.url,
@@ -201,8 +252,9 @@ async function fetchGitHub() {
                                 comments: item.comments?.totalCount || 0,
                                 reactions: item.reactions?.totalCount || 0
                             }
-                        });
-                        console.log(`Collected: ${type} from ${repo}`);
+                        };
+                        allData.push(itemData);
+                        repoData.push(itemData);
                     };
 
                     if (enableDiscussions && discussions) {
@@ -268,8 +320,12 @@ async function fetchGitHub() {
                     hasNextPage = false;
                 }
             }
+            if (repoData.length > 0) {
+                cache[cacheKey] = repoData;
+            }
         }
     }
+    saveCache();
     return allData;
 }
 
