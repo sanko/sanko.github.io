@@ -10,7 +10,8 @@
       { "name": "github", "url": "https://github.com/sanko" },
       { "name": "bluesky", "url": "https://bsky.app/profile/sankorobinson.com" },
       { "name": "email", "url": "mailto:sanko@cpan.org" }
-    ]
+    ],
+    "read_wpm": 180
   },
   "github": {
     "sources": [

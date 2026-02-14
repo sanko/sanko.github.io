@@ -236,6 +236,10 @@ async function fetchGitHub() {
                             finalTags = finalTags.filter(t => t !== repoSlug || groups.includes(t));
                         }
 
+                        const wordCount = (item.body || item.description || "").split(/\s+/).filter(w => w.length > 0).length;
+                        const wpm = config.profile.read_wpm || 200;
+                        const readTime = Math.max(1, Math.ceil(wordCount / wpm));
+
                         const itemData = {
                             sourceName: source.name,
                             type: type,
@@ -247,6 +251,8 @@ async function fetchGitHub() {
                             title: item.title || item.name || item.tagName,
                             url: item.url,
                             body: item.body || item.description || "",
+                            wordCount: wordCount,
+                            readTime: readTime,
                             tags: [...new Set(finalTags)],
                             metrics: {
                                 comments: item.comments?.totalCount || 0,
