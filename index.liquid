@@ -571,18 +571,20 @@
         .entry.tag-rel { margin-bottom: 2rem; }
         .rel-repo { font-family: var(--f-mono); font-weight: 700; font-size: 0.95rem; color: var(--c-text); }
         .rel-version { font-family: var(--f-mono); font-size: 0.75rem; color: var(--c-accent); background: color-mix(in oklch, var(--c-accent), transparent 90%); padding: 1px 4px; border-radius: 3px; margin-left: 0.5ch; }
-        .rel-msg { font-size: 0.9rem; color: var(--c-text); margin-top: 0.5rem; line-height: 1.5; }
-        .rel-msg h1, .rel-msg h2, .rel-msg h3 { margin-top: 1.5rem; margin-bottom: 0.75rem; font-weight: 700; line-height: 1.2; color: var(--c-text); }
-        .rel-msg h1 { font-size: 1.4rem; border-bottom: 1px solid color-mix(in oklch, var(--c-text), transparent 90%); padding-bottom: 0.3rem; }
-        .rel-msg h2 { font-size: 1.2rem; }
-        .rel-msg h3 { font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--c-accent); }
-        .rel-msg p { margin-bottom: 1rem; }
-        .rel-msg ul, .rel-msg ol { margin-bottom: 1rem; padding-left: 1.5rem; }
-        .rel-msg li { margin-bottom: 0.25rem; }
-        .rel-msg li::marker { color: var(--c-accent); }
-        .rel-msg pre { background: var(--c-table); padding: 1rem; border-radius: 4px; overflow-x: auto; margin: 1rem 0; border: 1px solid color-mix(in oklch, var(--c-text), transparent 90%); }
-        .rel-msg code { font-family: var(--f-mono); font-size: 0.85em; background: color-mix(in oklch, var(--c-text), transparent 95%); padding: 0.2em 0.4em; border-radius: 3px; }
-        .rel-msg pre code { background: none; padding: 0; font-size: 0.85rem; }
+        
+        .markdown-body { font-size: 0.9rem; color: var(--c-text); margin-top: 0.5rem; line-height: 1.5; }
+        .markdown-body h1, .markdown-body h2, .markdown-body h3 { margin-top: 1.5rem; margin-bottom: 0.75rem; font-weight: 700; line-height: 1.2; color: var(--c-text); }
+        .markdown-body h1 { font-size: 1.4rem; border-bottom: 1px solid color-mix(in oklch, var(--c-text), transparent 90%); padding-bottom: 0.3rem; }
+        .markdown-body h2 { font-size: 1.2rem; }
+        .markdown-body h3 { font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--c-accent); }
+        .markdown-body p { margin-bottom: 1rem; }
+        .markdown-body ul, .markdown-body ol { margin-bottom: 1rem; padding-left: 1.5rem; }
+        .markdown-body li { margin-bottom: 0.25rem; }
+        .markdown-body li::marker { color: var(--c-accent); }
+        .markdown-body pre { background: var(--c-table); padding: 1rem; border-radius: 4px; overflow-x: auto; margin: 1rem 0; border: 1px solid color-mix(in oklch, var(--c-text), transparent 90%); }
+        .markdown-body code { font-family: var(--f-mono); font-size: 0.85em; background: color-mix(in oklch, var(--c-text), transparent 95%); padding: 0.2em 0.4em; border-radius: 3px; }
+        .markdown-body pre code { background: none; padding: 0; font-size: 0.85rem; }
+        
         .rel-repo:hover { text-decoration: underline; text-decoration-color: var(--c-accent); text-underline-offset: 3px; }
 
         .lang-badge { font-family: var(--f-sans); font-size: 0.65rem; font-weight: 700; color: var(--c-sub); border: 1px solid color-mix(in oklch, var(--c-text), transparent 90%); padding: 1px 6px; border-radius: 10px; margin-left: 0.75ch; vertical-align: middle; display: inline-flex; align-items: center; gap: 4px; }
@@ -590,6 +592,7 @@
 
         /* MICRO-INTERACTIONS */
         .entry { transition: opacity 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.4s ease; transform: translateY(0); }
+        .entry.kb-focus { outline: 2px solid var(--c-accent); outline-offset: 10px; border-radius: 4px; }
         body:has(.filter-check:checked) .entry.no-match { transform: translateY(10px); }
         .filter-tag { transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s; display: inline-block; }
         .filter-tag:active { transform: scale(0.95); }
@@ -780,9 +783,12 @@
                                         <time class="entry-date">{{ item.date | date: "%b %d" }}</time>
                                         <a href="#{{ item.id }}" class="permalink" title="Link to this entry">#</a>
                                     </div>
-                                    {% if item.summary %}
-                                    <div class="entry-summary">{{ item.summary | markdown }}</div>
-                                    {% endif %}
+                                    <div class="content-crop">
+                                        <div class="entry-summary markdown-body">
+                                            {{ item.body | markdown }}
+                                        </div>
+                                    </div>
+                                    <button class="read-more-btn hidden-btn" aria-label="Show full content">Show More</button>
                                 {% endif %}
 
                             {% elsif item.type == 'video' %}
@@ -940,6 +946,21 @@
 
             const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
             window.history.replaceState({}, '', newUrl);
+
+            // 5. Update Document Title
+            let title = '{{ profile.name }}';
+            const context = [];
+            if (activeTags.length > 0) context.push(activeTags.length + ' tags');
+            if (selectedDates.size > 0) context.push(selectedDates.size + ' dates');
+            if (searchTerm) context.push('"' + searchTerm + '"');
+            
+            if (context.length > 0) {
+                title += ' / ' + context.join(', ');
+            }
+            if (visibleCount < allEntries.length) {
+                title += ` (${visibleCount} items)`;
+            }
+            document.title = title;
 
             updateTimelineNavVisibility();
         };
@@ -1251,8 +1272,76 @@
             });
         };
 
+        // Keyboard Navigation
+        function initKeyboardNav() {
+            let currentFocusIndex = -1;
+
+            const getVisibleEntries = () => {
+                return Array.from(document.querySelectorAll('.entry:not(.filtered-out):not(.no-match)'));
+            };
+
+            const updateFocus = (newIndex) => {
+                const entries = getVisibleEntries();
+                if (entries.length === 0) return;
+
+                // Remove old focus
+                if (currentFocusIndex >= 0 && entries[currentFocusIndex]) {
+                    entries[currentFocusIndex].classList.remove('kb-focus');
+                }
+
+                currentFocusIndex = Math.max(0, Math.min(newIndex, entries.length - 1));
+                const target = entries[currentFocusIndex];
+                
+                target.classList.add('kb-focus');
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            };
+
+            window.addEventListener('keydown', (e) => {
+                // Don't trigger if typing in an input
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                    if (e.key === 'Escape') {
+                        e.target.blur();
+                    }
+                    return;
+                }
+
+                switch (e.key.toLowerCase()) {
+                    case 'j':
+                        e.preventDefault();
+                        updateFocus(currentFocusIndex + 1);
+                        break;
+                    case 'k':
+                        e.preventDefault();
+                        updateFocus(currentFocusIndex - 1);
+                        break;
+                    case '/':
+                        e.preventDefault();
+                        document.getElementById('toggle-search').checked = true;
+                        const searchInput = document.getElementById('search-input');
+                        searchInput.focus();
+                        break;
+                    case 't':
+                        e.preventDefault();
+                        const themeRadios = ['theme-system', 'theme-light', 'theme-dark'];
+                        let currentTheme = themeRadios.find(id => document.getElementById(id).checked);
+                        let nextTheme = themeRadios[(themeRadios.indexOf(currentTheme) + 1) % themeRadios.length];
+                        document.getElementById(nextTheme).checked = true;
+                        updateState();
+                        break;
+                    case 'escape':
+                        e.preventDefault();
+                        document.getElementById('clear-filters').click();
+                        // Also reset focus
+                        document.querySelectorAll('.entry.kb-focus').forEach(el => el.classList.remove('kb-focus'));
+                        currentFocusIndex = -1;
+                        break;
+                }
+            });
+        }
+
         init();
         initReadMore();
+        initKeyboardNav();
     </script>
 </body>
 </html>
