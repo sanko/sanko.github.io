@@ -162,21 +162,21 @@
         /* Search */
         .search-container { visibility: hidden; height: 0; opacity: 0; overflow: hidden; margin-top: 1rem; width: 100%; max-width: 300px; margin-inline: auto; position: relative; transition: all 0.3s ease; }
         body:has(#toggle-search:checked) .search-container { visibility: visible; height: auto; opacity: 1; margin-bottom: 0.5rem; }
-        
+
         /* Activity Heatmap */
         .activity-container { visibility: hidden; height: 0; opacity: 0; overflow: hidden; margin-top: 1rem; width: 100%; transition: all 0.3s ease; }
         body:has(#toggle-activity:checked) .activity-container { visibility: visible; height: auto; opacity: 1; margin-bottom: 2rem; padding: 4px 0; }
-        
+
         .heatmap-grid { display: grid; grid-template-rows: repeat(7, 10px); grid-auto-flow: column; grid-auto-columns: 10px; gap: 3px; justify-content: center; padding: 4px; }
         .heat-box { width: 10px; height: 10px; border-radius: 2px; background-color: color-mix(in oklch, var(--c-paper), var(--c-text) 10%); transition: all 0.2s; cursor: pointer; }
         .heat-box:hover { outline: 1px solid var(--c-accent); outline-offset: 1px; }
         .heat-box.selected { outline: 2px solid var(--c-accent); outline-offset: 1px; z-index: 1; }
-        
+
         .heat-box.level-1 { background-color: color-mix(in oklch, var(--c-paper), var(--c-accent) 30%); }
         .heat-box.level-2 { background-color: color-mix(in oklch, var(--c-paper), var(--c-accent) 55%); }
         .heat-box.level-3 { background-color: color-mix(in oklch, var(--c-paper), var(--c-accent) 80%); }
         .heat-box.level-4 { background-color: var(--c-accent); }
-        
+
         /* Grayscale levels for non-matching days */
         .heat-box.mismatch { filter: grayscale(1) opacity(0.3); }
         .heat-box.mismatch.level-0 { background-color: color-mix(in oklch, var(--c-paper), var(--c-text) 5%); }
@@ -184,7 +184,7 @@
         .heat-box.mismatch.level-2 { background-color: color-mix(in oklch, var(--c-paper), var(--c-text) 35%); }
         .heat-box.mismatch.level-3 { background-color: color-mix(in oklch, var(--c-paper), var(--c-text) 50%); }
         .heat-box.mismatch.level-4 { background-color: color-mix(in oklch, var(--c-paper), var(--c-text) 65%); }
-        
+
         .heatmap-meta { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; max-width: 600px; margin: 0.75rem auto 0; font-family: var(--f-sans); font-size: 0.7rem; color: var(--c-sub); gap: 2rem; }
         .heatmap-stats-wrapper { display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-start; }
         .year-selector { display: flex; gap: 0.75rem; color: var(--c-sub); }
@@ -216,16 +216,15 @@
         .now-content p { margin-bottom: 0.5rem; }
         .now-meta { font-family: var(--f-sans); font-size: 0.7rem; color: var(--c-sub); margin-top: 1rem; text-align: right; }
 
-        /* Sticky Timeline Nav */
-        .nav-wrapper { position: absolute; right: 100%; top: 0; height: 100%; pointer-events: none; }
-        .timeline-nav { position: sticky; top: 50vh; transform: translateY(-50%); display: flex; flex-direction: column; gap: 0.75rem; padding-right: 2rem; pointer-events: auto; }
-        body:has(#sort-order:checked) .timeline-nav { flex-direction: column-reverse; }
-
-        .nav-year { color: var(--c-sub); opacity: 0.4; transition: all 0.2s; text-align: right; cursor: pointer; position: relative; font-family: var(--f-mono); font-size: 0.8rem; }
-        .nav-year:hover { opacity: 1; color: var(--c-text); }
-        .nav-year.active { opacity: 1; color: var(--c-accent); font-weight: 700; transform: scale(1.1); transform-origin: right center; }
-        .nav-year.active::after { content: "•"; position: absolute; right: -1rem; color: var(--c-accent); }
-        @media (max-width: 1200px) { .nav-wrapper { display: none; } }
+        /* Floating Year Marker */
+        .year-marker-wrapper { position: absolute; left: 100%; top: 0; height: 100%; pointer-events: none; }
+        .year-marker {
+            position: sticky; top: 100px; margin-left: 0.5rem;
+            font-family: var(--f-sans); font-weight: 500; font-size: 0.85rem;
+            color: var(--c-text); opacity: 1; pointer-events: auto; user-select: none;
+            transition: opacity 0.3s;
+        }
+        @media (max-width: 1200px) { .year-marker-wrapper { display: none; } }
 
         /* FILTER UI */
         .filter-interface { display: flex; flex-direction: column; align-items: center; gap: 1rem; position: relative; }
@@ -332,7 +331,7 @@
 
         /* SORTING LOGIC */
         /* Flex containers for reordering */
-        .timeline-feed { display: flex; flex-direction: column; gap: 4rem; }
+        .timeline-feed { display: flex; flex-direction: column; gap: 4rem; position: relative; }
 
         /* The article wrapper allows sorting articles without moving the year title */
         .year-articles { display: flex; flex-direction: column; gap: 2.5rem; }
@@ -443,7 +442,7 @@
 
         /* SORTING LOGIC */
         /* Flex containers for reordering */
-        .timeline-feed { display: flex; flex-direction: column; gap: 4rem; }
+        .timeline-feed { display: flex; flex-direction: column; gap: 4rem; position: relative; }
 
         /* The article wrapper allows sorting articles without moving the year title */
         .year-articles { display: flex; flex-direction: column; gap: 2.5rem; }
@@ -538,20 +537,20 @@
         /* Truncation / Read More */
         .content-crop { max-height: 300px; overflow: hidden; position: relative; transition: max-height 0.4s ease; }
         .content-crop.expanded { max-height: none; overflow: visible; }
-        
+
         /* Only show fade if the crop is active and not expanded */
-        .content-crop.is-truncated::after { 
-            content: ""; position: absolute; bottom: 0; left: 0; width: 100%; height: 80px; 
-            background: linear-gradient(to bottom, transparent, var(--c-paper)); 
-            pointer-events: none; opacity: 1; transition: opacity 0.3s; 
+        .content-crop.is-truncated::after {
+            content: ""; position: absolute; bottom: 0; left: 0; width: 100%; height: 80px;
+            background: linear-gradient(to bottom, transparent, var(--c-paper));
+            pointer-events: none; opacity: 1; transition: opacity 0.3s;
         }
         .content-crop.expanded::after { opacity: 0; }
 
-        .read-more-btn { 
-            display: block; width: 100%; border: none; 
-            background: color-mix(in oklch, var(--c-paper), var(--c-text) 5%); 
-            color: var(--c-sub); font-family: var(--f-sans); font-size: 0.8rem; 
-            padding: 0.5rem; cursor: pointer; margin-top: -1rem; position: relative; 
+        .read-more-btn {
+            display: block; width: 100%; border: none;
+            background: color-mix(in oklch, var(--c-paper), var(--c-text) 5%);
+            color: var(--c-sub); font-family: var(--f-sans); font-size: 0.8rem;
+            padding: 0.5rem; cursor: pointer; margin-top: -1rem; position: relative;
             z-index: 2; border-radius: 0 0 4px 4px; transition: all 0.2s;
             border-top: 1px solid color-mix(in oklch, var(--c-text), transparent 94%);
         }
@@ -663,10 +662,6 @@
 
     <main class="the-paper">
         <div class="paper-content">
-            <div class="nav-wrapper">
-                <aside class="timeline-nav" id="timeline-nav"></aside>
-            </div>
-
             <header>
                 <h1>{{ profile.name }}</h1>
                 <p class="bio">{{ profile.tagline }}</p>
@@ -728,10 +723,12 @@
             {% endif %}
 
             <div class="timeline-feed">
+                <div class="year-marker-wrapper">
+                    <aside class="year-marker" id="floating-year-marker"></aside>
+                </div>
             {% for year_group in timeline %}
             <section class="year-block" id="year-{{ year_group.year }}">
                 <div class="year-inner">
-                    <h2 class="year-title">{{ year_group.year }}</h2>
                     <div class="year-articles">
 
                     {% for item in year_group.items %}
@@ -849,6 +846,7 @@
 
             if(params.get('collapse')) document.getElementById('toggle-collapse').checked = true;
             if(params.get('sort') === 'oldest') document.getElementById('sort-order').checked = true;
+            if(params.get('activity')) document.getElementById('toggle-activity').checked = true;
 
             const searchParam = params.get('search');
             if (searchParam) {
@@ -897,7 +895,7 @@
             heatmapBoxes.forEach(box => {
                 const date = box.getAttribute('data-date');
                 box.classList.toggle('selected', selectedDates.has(date));
-                
+
                 // Check if this day has ANY entry that matches current TAGS and SEARCH
                 const dayEntries = Array.from(allEntries).filter(e => e.id.split('-').slice(1, 4).join('-') === date);
                 const hasMatch = dayEntries.some(e => {
@@ -928,6 +926,7 @@
             if (activeTags.length > 0) params.set('tags', activeTags.join(','));
             if (selectedDates.size > 0) params.set('dates', Array.from(selectedDates).join(','));
             if (currentHeatmapYear !== 'rolling') params.set('hyear', currentHeatmapYear);
+            if (document.getElementById('toggle-activity').checked) params.set('activity', '1');
             if (document.getElementById('toggle-collapse').checked) params.set('collapse', '1');
             if (document.getElementById('sort-order').checked) params.set('sort', 'oldest');
             if (document.getElementById('toggle-search').checked) {
@@ -981,11 +980,11 @@
                 document.querySelectorAll('.entry').forEach(entry => {
                     const contentElements = entry.querySelectorAll('.entry-title, .entry-summary, .note-text, .rel-repo, .rel-msg');
                     let matches = false;
-                    
+
                     contentElements.forEach(el => {
                         const originalText = el.getAttribute('data-original-text') || el.innerHTML;
                         if (!el.hasAttribute('data-original-text')) el.setAttribute('data-original-text', originalText);
-                        
+
                         const plainText = el.textContent.toLowerCase();
                         if (term && plainText.includes(term)) {
                             matches = true;
@@ -1033,7 +1032,7 @@
             const allEntries = document.querySelectorAll('.entry');
             const years = new Set();
             const activity = {};
-            
+
             allEntries.forEach(entry => {
                 const dateParts = entry.id.split('-').slice(1, 4);
                 const dateId = dateParts.join('-');
@@ -1084,7 +1083,7 @@
                 // Adjust to the end of that week (Saturday)
                 endDate.setDate(endDate.getDate() + (6 - endDate.getDay()));
             }
-            
+
             const dayCount = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24));
             const now = new Date();
             now.setHours(0, 0, 0, 0);
@@ -1096,7 +1095,7 @@
                 const count = activity[dateId] || 0;
                 const isFuture = d > now;
                 const isOutsideYear = currentHeatmapYear !== 'rolling' && d.getFullYear().toString() !== currentHeatmapYear;
-                
+
                 const box = document.createElement('div');
                 box.className = 'heat-box';
                 box.setAttribute('data-date', dateId);
@@ -1133,71 +1132,32 @@
             }
         }
 
-        // Sticky Nav & ScrollSpy
-        function generateTimelineNav() {
-            const nav = document.getElementById('timeline-nav');
-            const years = document.querySelectorAll('.year-block');
-            if (!nav) return;
+        // Floating Year & ScrollSpy
+        function initYearMarker() {
+            const marker = document.getElementById('floating-year-marker');
+            const entries = document.querySelectorAll('.entry');
+            if (!marker || entries.length === 0) return;
 
-            nav.innerHTML = ''; 
-            years.forEach(year => {
-                const yearNum = year.id.replace('year-', '');
-                const link = document.createElement('a');
-                link.textContent = yearNum;
-                link.className = 'nav-year';
-                link.id = 'nav-link-' + yearNum;
-                link.onclick = () => {
-                    document.getElementById('year-' + yearNum).scrollIntoView({ behavior: 'smooth' });
-                };
-                nav.appendChild(link);
-            });
+            const observer = new IntersectionObserver((observed) => {
+                // Find the topmost visible entry that is NOT filtered out
+                const visible = observed
+                    .filter(entry => entry.isIntersecting)
+                    .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
 
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const id = entry.target.id.replace('year-', '');
-                        document.querySelectorAll('.nav-year').forEach(n => n.classList.remove('active'));
-                        const activeLink = document.getElementById('nav-link-' + id);
-                        if (activeLink) activeLink.classList.add('active');
-                    }
-                });
-            }, { rootMargin: '-20% 0px -60% 0px' });
-
-            years.forEach(year => observer.observe(year));
-        }
-
-        function updateTimelineNavVisibility() {
-            const activeTagIds = Array.from(document.querySelectorAll('.filter-check:checked')).map(cb => cb.id.replace('f-', ''));
-            const hasTags = activeTagIds.length > 0;
-            const hasDates = selectedDates.size > 0;
-
-            document.querySelectorAll('.year-block').forEach(year => {
-                const yearNum = year.id.replace('year-', '');
-                const navLink = document.getElementById('nav-link-' + yearNum);
-                if (!navLink) return;
-
-                const entries = year.querySelectorAll('.entry');
-                let hasVisibleEntry = false;
-
-                for (const entry of entries) {
-                    const isSearchMatch = !entry.classList.contains('no-match');
-                    const entryDate = entry.id.split('-').slice(1, 4).join('-');
-                    
-                    let isTagMatch = !hasTags || activeTagIds.some(tagId => entry.classList.contains('tag-' + tagId));
-                    let isDateMatch = !hasDates || selectedDates.has(entryDate);
-
-                    if (isSearchMatch && isTagMatch && isDateMatch) {
-                        hasVisibleEntry = true;
-                        break;
+                if (visible.length > 0) {
+                    const topEntry = visible[0].target;
+                    const year = topEntry.id.split('-')[1]; // entry-YYYY-MM-DD-id
+                    if (marker.textContent !== year) {
+                        marker.textContent = year;
                     }
                 }
+            }, { rootMargin: '-10% 0px -80% 0px', threshold: 0 });
 
-                navLink.style.display = hasVisibleEntry ? 'block' : 'none';
-            });
+            entries.forEach(entry => observer.observe(entry));
         }
 
         init();
-        generateTimelineNav();
+        initYearMarker();
         // initReadMore(); // This needs to be called after state updates too? Or just once.
 
         function generateTimelineNav() {
