@@ -84,8 +84,28 @@ async function fetchGitHub() {
     const primaryUser = getPrimaryGitHubUser();
     const pagesRepo = primaryUser ? `${primaryUser}/${primaryUser}.github.io` : null;
 
-    const query = `query($owner: String!, $name: String!, $user: String!, $after: String) {
-      user(login: $user) { status { emoji, message, indicatesLimitedAvailability } }
+    // Fetch User Status separately if possible
+    if (primaryUser && !githubStatus) {
+        try {
+            const statusRes = await fetch('https://api.github.com/graphql', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `bearer ${process.env.GH_TOKEN}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    query: `query($user: String!) { user(login: $user) { status { emoji, message, indicatesLimitedAvailability } } }`,
+                    variables: { user: primaryUser }
+                })
+            });
+            const statusJson = await statusRes.json();
+            if (statusJson.data?.user?.status) githubStatus = statusJson.data.user.status;
+        } catch (e) {
+            console.error('Error fetching user status:', e.message);
+        }
+    }
+
+    const query = `query($owner: String!, $name: String!, $after: String) {
       repository(owner: $owner, name: $name) {
         discussions(first: 100, orderBy: {field: CREATED_AT, direction: DESC}, after: $after) {
           pageInfo { hasNextPage, endCursor }
@@ -121,7 +141,6 @@ async function fetchGitHub() {
                             variables: {
                                 owner: source.owner,
                                 name: repo,
-                                user: primaryUser || source.owner,
                                 after: endCursor
                             }
                         })
@@ -132,8 +151,6 @@ async function fetchGitHub() {
                         console.error(`GH Error ${repo} (page): No data.`, json.errors || json);
                         break;
                     }
-
-                    if (firstRun && !githubStatus && json.data.user?.status) githubStatus = json.data.user.status;
 
                     if (!json.data.repository) {
                         console.error(`GH Error ${repo}: Repository not found or access denied.`);
@@ -163,9 +180,10 @@ async function fetchGitHub() {
                         }
 
                         // If the repo is part of a group, remove the individual repo tag
+                        // unless the group tag itself matches the repo tag
                         let finalTags = [...tags, ...groups];
                         if (groups.length > 0) {
-                            finalTags = finalTags.filter(t => t !== repoSlug);
+                            finalTags = finalTags.filter(t => t !== repoSlug || groups.includes(t));
                         }
 
                         allData.push({
@@ -184,6 +202,7 @@ async function fetchGitHub() {
                                 reactions: item.reactions?.totalCount || 0
                             }
                         });
+                        console.log(`Collected: ${type} from ${repo}`);
                     };
 
                     if (enableDiscussions && discussions) {
@@ -225,6 +244,7 @@ async function fetchGitHub() {
                             hasNextPage = false;
                         }
                     } else {
+                        // If discussions are not enabled or not present, we still want to proceed to fetch releases/issues on the first run
                         hasNextPage = false;
                     }
 

@@ -41,9 +41,11 @@
     ],
     "groups": {
       "Infrastructure": ["sanko/dotfiles", "payment-gateway"],
+      "FFI": ["sanko/Affix.pm", "sanko/infix"],
+      "Affix.pm": ["sanko/Affix.pm"],
       "Net::BitTorrent": ["sanko/Net-BitTorrent.pm", "sanko/Acme-Bitfield.pm", "sanko/net-bittorrent-protocol", "sanko/Acme-Selection-RarestFirst.pm", "sanko/Algorithm-Kademlia.pm", "sanko/Algorithm-RateLimiter-TokenBucket.pm", "sanko/Digest-Merkle-SHA256.pm", "sanko/Net-Multicast-PeerDiscovery.pm", "sanko/Net-uTP.pm"],
       "libUI": ["sanko/alien-libui", "sanko/libui.pm", "Perl-SDL3/alien-libui", "sanko/Alien-xmake"],
-      "AT Protocol/Bluesky": ["sanko/Bluesky.pm", "sanko/At.pm", "sanko/app-bsky"],
+      "AT Protocol / Bluesky": ["sanko/Bluesky.pm", "sanko/At.pm", "sanko/app-bsky"],
       "SDL3.pm": ["Perl-SDL3/SDL3.pm", "Perl-SDL3/FFI-SDL3.pm", "Perl-SDL3/Alien-SDL3.pm", "Perl-SDL3/Alien-SDL3_image.pm", "Perl-SDL3/Alien-SDL3_mixer.pm", "Perl-SDL3/Alien-SDL3_ttf.pm", "Perl-SDL3/Alien-SDL3_rtf.pm", "Perl-SDL3/Alien-SDL3_net.pm"]
     },
     "tag_overrides": { "css": "CSS", "ai": "AI" }

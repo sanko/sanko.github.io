@@ -4,3 +4,4 @@ feed.xml
 atom.xml
 feeds/
 package-lock.json
+.env
