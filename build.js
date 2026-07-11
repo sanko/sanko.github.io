@@ -41,6 +41,18 @@ engine.registerFilter('pluralize', (count, singular, plural) => {
 const rssParser = new Parser();
 const slugify = txt => txt.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
+function stripMarkdown(text, maxLen = 150) {
+    let t = text.substring(0, 300);
+    t = t.replace(/```[\s\S]*?```/g, '');
+    t = t.replace(/`([^`]+)`/g, '$1');
+    t = t.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+    t = t.replace(/[*_]{1,3}([^*_]+)[*_]{1,3}/g, '$1');
+    t = t.replace(/^#{1,6}\s+/gm, '');
+    t = t.replace(/^[-*+]\s+/gm, '');
+    t = t.replace(/\n+/g, ' ').trim();
+    return t.substring(0, maxLen).trim() + '...';
+}
+
 // State
 let githubStatus = null;
 let nowPost = null;
@@ -646,8 +658,93 @@ async function fetchBitbucket() {
 
 // DATA PREP
 
+// Prepare projects data with custom blurbs from config
+function prepareProjectsData(allContent) {
+    const projects = config.projects?.sources || [];
+    
+    return projects
+        .sort((a, b) => (a.order || 0) - (b.order || 0))
+        .map(project => {
+            // Find related articles from discussions that mention this project
+            const projectRepo = project.repo.split('/')[1];
+            const relatedArticles = allContent.filter(item => 
+                item.type === 'article' && 
+                item.service === 'github' &&
+                (item.body.toLowerCase().includes(project.name.toLowerCase()) ||
+                 item.body.toLowerCase().includes(projectRepo.toLowerCase()))
+            ).slice(0, 2);
+            
+            return {
+                ...project,
+                url: `https://github.com/${project.repo}`,
+                articles: relatedArticles.map(article => ({
+                    title: article.title,
+                    slug: slugify(article.title),
+                    date: article.date,
+            excerpt: article.summary || stripMarkdown(article.body),
+                    tags: article.tags
+                }))
+            };
+        });
+}
+
+// Prepare articles timeline from discussions
+function prepareArticlesTimeline(allContent) {
+    const articles = allContent.filter(item => 
+        item.type === 'article' && 
+        item.service === 'github'
+    );
+    
+    const articleTimeline = [];
+    const articlesByYear = {};
+    
+    articles.forEach(article => {
+        const year = article.date.getFullYear();
+        if (!articlesByYear[year]) articlesByYear[year] = [];
+        
+        articlesByYear[year].push({
+            title: article.title,
+            slug: slugify(article.title),
+            date: article.date,
+            excerpt: article.summary || stripMarkdown(article.body),
+            tags: article.tags,
+            readTime: article.readTime || Math.ceil((article.wordCount || 0) / (config.profile.read_wpm || 200)),
+            body: article.body
+        });
+    });
+    
+    Object.keys(articlesByYear)
+        .sort((a, b) => b - a)
+        .forEach(year => {
+            articleTimeline.push({
+                year: year,
+                articles: articlesByYear[year].sort((a, b) => b.date - a.date)
+            });
+        });
+    
+    return { articles, articleTimeline };
+}
+
+// Collect all unique tags from articles for filtering
+function collectFilterTags(articles, projects) {
+    const filterTags = new Set();
+    articles.forEach(article => {
+        article.tags.forEach(tag => {
+            if (!tag.startsWith('entry-') && tag !== 'github' && tag !== 'sanko-github-io') {
+                filterTags.add(tag);
+            }
+        });
+    });
+    projects.forEach(project => {
+        (project.tags || []).forEach(tag => {
+            filterTags.add(tag);
+        });
+    });
+    return Array.from(filterTags).sort();
+}
+
 function prepareTemplateData(allContent, uniqueTags) {
-    // 1. Filter List
+    // 1. Filter List (kept for compatibility)
     const types = ['notes', 'commits', 'video', 'bookmark', 'rss'];
     const knownRepos = config.github?.sources ? config.github.sources.flatMap(s => s.repos.map(r => slugify(r))) : [];
     const knownGroups = config.github?.groups ? Object.keys(config.github.groups).map(g => slugify(g)) : [];
@@ -700,8 +797,8 @@ function prepareTemplateData(allContent, uniqueTags) {
             // Find the first line that has text and is NOT a Header (#)
             const raw = item.body.split('\n').find(l => l.trim().length > 0 && !l.trim().startsWith('#')) || "";
 
-            // Assign the raw markdown line directly to summary
-            item.summary = raw;
+            // Assign the stripped markdown line as summary
+            item.summary = stripMarkdown(raw);
         }
 
         byYear[year].push(item);
@@ -734,9 +831,19 @@ function prepareTemplateData(allContent, uniqueTags) {
         };
     }
 
+    // 5. Projects data
+    const projects = prepareProjectsData(allContent);
+
+    // 6. Articles data
+    const { articles, articleTimeline } = prepareArticlesTimeline(allContent);
+
+    // 7. Filter tags for the new homepage
+    const filterTags = collectFilterTags(articles, projects);
+
     return {
         profile: config.profile,
         analytics: config.analytics,
+        giscus: config.giscus || { enabled: false },
         feeds: config.feeds ? Object.keys(config.feeds).map(k => ({
             file: k,
             ...config.feeds[k],
@@ -749,7 +856,11 @@ function prepareTemplateData(allContent, uniqueTags) {
         filter_sections: filter_sections,
         timeline: timeline,
         status: statusObj,
-        now: nowObj
+        now: nowObj,
+        projects: projects,
+        articles: articles,
+        article_timeline: articleTimeline,
+        filter_tags: filterTags
     };
 }
 
@@ -793,6 +904,47 @@ function generateFeedFiles(allContent) {
     });
 }
 
+// ARTICLE PAGE GENERATION
+
+async function generateArticlePages(articles, data) {
+    if (!articles || articles.length === 0) {
+        console.log('No articles to generate pages for.');
+        return;
+    }
+
+    const articleTemplate = fs.readFileSync('article.liquid', 'utf8');
+    const articlesDir = path.join(__dirname, 'articles');
+
+    // Create articles directory if it doesn't exist
+    if (!fs.existsSync(articlesDir)) {
+        fs.mkdirSync(articlesDir, { recursive: true });
+    }
+
+    for (const article of articles) {
+        const slug = slugify(article.title);
+        const articleDir = path.join(articlesDir, slug);
+
+        // Create article directory
+        if (!fs.existsSync(articleDir)) {
+            fs.mkdirSync(articleDir, { recursive: true });
+        }
+
+        // Render article page
+        const html = await engine.parseAndRender(articleTemplate, {
+            ...data,
+            article: {
+                ...article,
+                slug: slug,
+                readTime: article.readTime || Math.ceil((article.wordCount || 0) / (config.profile.read_wpm || 200))
+            }
+        });
+
+        // Write to articles/{slug}/index.html
+        fs.writeFileSync(path.join(articleDir, 'index.html'), html);
+        console.log(`Generated article: /articles/${slug}/`);
+    }
+}
+
 // MAIN
 
 async function build() {
@@ -820,6 +972,10 @@ async function build() {
     const template = fs.readFileSync('index.liquid', 'utf8');
     const html = await engine.parseAndRender(template, data);
     fs.writeFileSync('index.html', html);
+    console.log('Generated homepage: /index.html');
+
+    // Generate Article Pages
+    await generateArticlePages(data.articles, data);
 
     // Generate Feeds
     generateFeedFiles(allContent);

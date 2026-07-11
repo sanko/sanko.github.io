@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" id="metaThemeColor" content="#DA291C">
+  <title>Advanced JIT Compilation // SankoRobinson.com</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;700&family=Playfair+Display:wght@400;700&family=DM+Sans:wght@400;700&family=Fraunces:opsz,wght@9..144,400;9..144,700&family=Outfit:wght@400;700&family=Anton&family=Bebas+Neue&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="sanko.css">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Advanced JIT Compilation & IR Optimization",
+    "author": {
+      "@type": "Person",
+      "name": "Sanko Robinson",
+      "url": "https://sankorobinson.com"
+    },
+    "datePublished": "2026-06-14T08:00:00+00:00",
+    "dateModified": "2026-06-14T08:00:00+00:00",
+    "keywords": "Compilers, Algorithms, JIT, SSA",
+    "publisher": {
+      "@type": "Organization",
+      "name": "Sanko Robinson"
+    }
+  }
+  </script>
+
+<!-- ANTI-FOUC SCRIPT: Applies theme before the browser paints the first frame -->
+  <script>
+    (function() {
+      // 1. Fetch color or use the default Swiss Red
+      var c = localStorage.getItem('swiss-color') || '#DA291C';
+      document.documentElement.style.setProperty('--primary', c);
+
+      // 2. FORCE the HTML canvas to paint instantly, killing the View Transition white flash
+      document.documentElement.style.backgroundColor = c;
+
+      var m = document.getElementById('metaThemeColor');
+      if (m) m.setAttribute('content', c);
+
+      // 3. Fetch and inject fonts
+      var f = localStorage.getItem('swiss-font');
+      if (f) {
+        document.documentElement.style.setProperty('--font', f);
+        var fontName = f.split(',')[0].replace(/['"]/g, '').trim();
+        var l = document.createElement('link');
+        l.rel = 'stylesheet';
+        l.href = 'https://fonts.googleapis.com/css2?family=' + fontName.replace(/ /g,'+') + ':wght@400;700;900&display=swap';
+        document.head.appendChild(l);
+      }
+    })();
+  </script>
+</head>
+<body class="swiss-page tufte-body">
+
+  <div class="reading-progress" aria-hidden="true"></div>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <nav class="swiss-nav">
+    <a href="index.html" class="nav-mark" aria-label="Home">SR</a>
+    <button type="button" class="nav-settings" id="settingsToggle" aria-expanded="false" aria-controls="settingsPanel" aria-label="Toggle display settings">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+    </button>
+  </nav>
+
+    <div class="settings-panel" id="settingsPanel" hidden>
+      <div class="settings-group">
+        <label class="settings-label" for="fontSelect">Typeface</label>
+        <select class="settings-select" id="fontSelect"></select>
+      </div>
+      <div class="settings-group">
+        <label class="settings-label">Accent Color</label>
+        <div class="color-presets" aria-label="Color presets">
+          <button type="button" class="preset-btn" data-color="#DA291C" style="--swatch: #DA291C" aria-label="Swiss Red"></button>
+          <button type="button" class="preset-btn" data-color="#D4FF00" style="--swatch: #D4FF00" aria-label="Chartreuse"></button>
+          <button type="button" class="preset-btn" data-color="#FF1493" style="--swatch: #FF1493" aria-label="Deep Pink"></button>
+          <button type="button" class="preset-btn" data-color="#0055FF" style="--swatch: #0055FF" aria-label="Cobalt Blue"></button>
+          <button type="button" class="preset-btn" data-color="#FF5E00" style="--swatch: #FF5E00" aria-label="Safety Orange"></button>
+          <button type="button" class="preset-btn" data-color="#8A2BE2" style="--swatch: #8A2BE2" aria-label="Electric Purple"></button>
+          <button type="button" class="preset-btn" data-color="#00E5FF" style="--swatch: #00E5FF" aria-label="Cyan"></button>
+          <button type="button" class="preset-btn" data-color="#111111" style="--swatch: #111111" aria-label="Pitch Black"></button>
+        </div>
+        <div class="color-row">
+          <label for="colorPicker" class="sr-only" style="display:none;">Custom color picker</label>
+          <input type="color" class="settings-color" id="colorPicker" value="#da291c">
+          <span class="color-hex" id="colorHex" aria-hidden="true">#DA291C</span>
+        </div>
+      </div>
+      <div class="settings-group settings-close-row">
+        <small class="settings-hint">Click <kbd>ESC</kbd> or tap outside to close</small>
+      </div>
+    </div>
+
+  <main id="main-content">
+    <header class="post-header">
+      <h1 class="post-title">Advanced JIT Compilation & IR Optimization</h1>
+      <div class="post-meta">
+        <span><time datetime="2026-06-14">June 14, 2026</time></span>
+        <span>24 Min Read</span>
+      </div>
+    </header>
+
+    <article class="post-content">
+
+      <div class="epigraph">
+        <blockquote>
+          "The beauty of the Phi (Φ) function is that it doesn't actually exist in the compiled machine code. It is a purely theoretical construct that allows our optimizer to reason mathematically about merged dataflow."
+        </blockquote>
+        <footer>— Cytron et al., 1989</footer>
+      </div>
+
+      <nav class="toc" aria-label="Table of Contents">
+        <h4>Contents</h4>
+        <ul>
+          <li><a href="#intro">Introduction to SSA</a></li>
+          <li><a href="#lists">Compiler Phases</a></li>
+          <li><a href="#benchmarks">Performance Benchmarks</a></li>
+          <li><a href="#graphs">Visualizing AST vs Sea-of-Nodes</a></li>
+          <li><a href="#feedback">Submit Errata</a></li>
+        </ul>
+      </nav>
+
+      <h2 id="intro">Introduction to SSA</h2>
+      <p>
+        <span class="newthought">In compiler design,</span> Static Single Assignment (<abbr title="Static Single Assignment">SSA</abbr>) form is a property of an intermediate representation (<span class="sans">IR</span>) that requires each variable to be assigned exactly once, and every variable to be defined before it is used.
+
+        <label for="sn-1" class="margin-toggle sidenote-number"></label>
+        <input type="checkbox" id="sn-1" class="margin-toggle"/>
+        <span class="sidenote">Dataflow analysis in traditional Abstract Syntax Trees (<span class="sans">ASTs</span>) often requires "reaching definition" calculations which scale quadratically, or O(N<sup>2</sup>). SSA reduces this overhead significantly.</span>
+      </p>
+
+      <p>
+        Consider a simple block of code that computes a value and then overwrites it.
+        <label for="mn-1" class="margin-toggle">&#8853; Technical Context</label>
+        <input type="checkbox" id="mn-1" class="margin-toggle"/>
+        <span class="marginnote">In a standard three-address code structure, this mutation requires generating <em>Kill</em> and <em>Gen</em> sets for every basic block during liveness analysis.</span>
+        In a traditional AST, dataflow analysis becomes complicated because the definition of <code>x</code> changes mid-block. We can see <del>the problem</del> <ins>the inefficiency</ins> clearly below:
+      </p>
+
+<pre><code>// Original Code
+int y = 1;
+int x = 2;
+x = x + y;
+y = x * 2;
+
+// SSA Form Translation
+int y_1 = 1;
+int x_1 = 2;
+int x_2 = x_1 + y_1;
+int y_2 = x_2 * 2;</code></pre>
+
+      <p>To convert this to SSA form, we simply append unique subscripts to the variables. This gives us the mathematical property of referential transparency within the local block.</p>
+
+      <hr>
+
+      <h2 id="lists">Compiler Phases</h2>
+      <p>Before a <abbr title="Just-In-Time">JIT</abbr> compiler applies SSA transformations, the raw source code must undergo several foundational phases. To execute this, type <kbd>make build-jit</kbd> in your terminal. A typical modern compiler is broken down sequentially into the following ordered steps:</p>
+
+      <ol>
+        <li><strong>Lexical Analysis:</strong> Converts the raw string of code into a stream of categorized tokens. Output looks like <samp>[Token::IDENTIFIER("x")]</samp>.</li>
+        <li><strong>Syntax Analysis (Parsing):</strong> Organizes the tokens into an Abstract Syntax Tree based on the language grammar.</li>
+        <li><strong>Semantic Analysis:</strong> Verifies type safety, variable resolution, and scoping rules.</li>
+      </ol>
+
+      <aside>
+        "Speculative optimization is a gamble. We bet that the code will continue to execute with the same types it saw in the past. When we lose the bet, we must gracefully deoptimize."
+      </aside>
+
+      <p>In addition to these static phases, a JIT compiler applies speculative, runtime optimizations. These usually include:</p>
+
+      <ul>
+        <li>Inline caching for polymorphic call sites to speed up dynamic dispatch.</li>
+        <li>Hidden class transitions (often implemented via Shape trees).</li>
+        <li>On-stack replacement (<span class="sans">OSR</span>) to compile hot loops while they are actively running.</li>
+      </ul>
+
+      <details>
+        <summary>View the OSR Lowering Algorithm</summary>
+        <p>On-Stack Replacement is tricky because you must map the interpreter's virtual registers to the physical registers of the compiled machine code <em>while</em> the function is executing.</p>
+<pre><code>function OSR_Lower(frame_state, compiled_code):
+    registers = MapVirtualToPhysical(frame_state)
+    stack_offsets = ComputeStackSpills(frame_state)
+    jump_to(compiled_code.loop_header, registers, stack_offsets)</code></pre>
+      </details>
+
+      <h2 id="benchmarks">Performance Benchmarks</h2>
+      <p>When applying loop-invariant code motion (<span class="sans">LICM</span>) across various backends, the advantages of SSA-based IR become apparent immediately. Below is a comparison of compilation times vs execution times across three distinct engines.</p>
+
+      <div class="tufte-table-wrap">
+        <table class="tufte-table">
+          <thead>
+            <tr>
+              <th>Compiler Engine</th>
+              <th>IR Type</th>
+              <th class="num">Compile (ms)</th>
+              <th class="num">Exec (ms)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>V8 Ignition</td>
+              <td>Bytecode</td>
+              <td class="num">12.4</td>
+              <td class="num">410.2</td>
+            </tr>
+            <tr>
+              <td>V8 TurboFan</td>
+              <td>Sea-of-Nodes SSA</td>
+              <td class="num">89.1</td>
+              <td class="num">12.5</td>
+            </tr>
+            <tr>
+              <td>LuaJIT</td>
+              <td>Trace SSA</td>
+              <td class="num">45.0</td>
+              <td class="num">18.9</td>
+            </tr>
+            <tr>
+              <td>Affix.pm (Ours)</td>
+              <td>Trace SSA</td>
+              <td class="num">38.2</td>
+              <td class="num">14.1</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="graphs">Visualizing AST vs Sea-of-Nodes</h2>
+      <p>
+        <span class="newthought">The shift from a rigid</span> Abstract Syntax Tree to a Sea-of-Nodes architecture fundamentally changes how we view dependencies. Data dependencies and control dependencies become unified edges in a single directed graph. Look at the inline sparkline <span class="sparkline"><span class="spark-point"></span></span> representing memory consumption during this graph reduction phase; it spikes immediately before dead-code elimination executes.
+      </p>
+
+      <p>Here is an example of a standard figure using our new CSS Grid layout. Notice how the image stays constrained within the 55% reading column, but its descriptive caption perfectly aligns to its top edge in the 45% right margin.</p>
+
+      <figure>
+        <img src="https://placehold.co/800x500/e6e6e6/111111?text=Standard+Figure" alt="A standard width architectural diagram">
+        <figcaption>Figure 1. A standard figure graphic. The caption utilizes the Tufte margin space to keep the main text column completely clear and readable, aligning to the top of the adjacent image via CSS Grid.</figcaption>
+      </figure>
+
+      <p>Conversely, here is an architectural diagram that breaks the main column width to allow for maximum detail inspection. The <code>&lt;figure&gt;</code> element is given the <code>fullwidth</code> class, expanding it across both columns:</p>
+
+      <figure class="fullwidth">
+        <img src="https://placehold.co/1400x400/e6e6e6/111111?text=Full-Width+Architecture+Diagram+Placeholder" alt="A wide architecture diagram showing node reduction">
+        <figcaption>Figure 2. A full-width graphic breaking out of the 55% column to utilize the margin space, representing a Sea-of-Nodes reduction pass. Because the image spans the whole page, the caption elegantly tucks underneath it in the main reading column.</figcaption>
+      </figure>
+
+      <h3>Inline Media Integration</h3>
+      <p>Edward Tufte advocates for keeping relevant media directly inline with the text describing it, rather than linking out or placing it on a separate page. If we were demonstrating a step-by-step debugger, an inline video loop works beautifully:</p>
+
+      <figure>
+        <video autoplay loop muted playsinline aria-label="Animation of register allocation">
+          <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
+        </video>
+        <figcaption>Video 1. Linear scan register allocation occurring in real-time. Notice how the variable lifetimes overlap causing a memory spill to the stack.</figcaption>
+      </figure>
+
+      <h2 id="feedback">Submit Errata</h2>
+      <p>Because these implementations are moving targets, the codebase changes rapidly. If you spot an error in the IR lowering examples above, please submit feedback directly below.</p>
+
+      <form class="tufte-form" action="#" method="POST">
+        <fieldset>
+          <legend>Technical Errata</legend>
+          <label for="errata-email">Return Address (Optional)</label>
+          <input type="email" id="errata-email" placeholder="john.von.neumann@princeton.edu">
+
+          <label for="errata-desc">Correction / Notes</label>
+          <textarea id="errata-desc" rows="4" required placeholder="Found a bug in the dominator tree algorithm..."></textarea>
+
+          <button type="submit">Submit Correction</button>
+        </fieldset>
+      </form>
+
+      <section class="references">
+        <h4>References</h4>
+        <ol>
+          <li>Cytron, R., Ferrante, J., Rosen, B. K., Wegman, M. N., & Zadeck, F. K. (1989). <a href="#"><em>An efficient method of computing static single assignment form.</em></a> In Proceedings of the 16th ACM SIGPLAN-SIGACT symposium on Principles of programming languages (POPL '89).</li>
+          <li>Click, C., & Paleczny, M. (1995). <a href="#"><em>A simple graph-based intermediate representation.</em></a> ACM SIGPLAN Notices, 30(3), 211-218.</li>
+        </ol>
+      </section>
+
+    </article>
+  </main>
+
+  <script src="sanko.js"></script>
+</body>
+</html>

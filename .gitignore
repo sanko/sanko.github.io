@@ -1,7 +1,9 @@
 node_modules/
 index.html
+articles/
 feed.xml
 atom.xml
 feeds/
 package-lock.json
 .env
+.cache.json

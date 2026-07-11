@@ -13,6 +13,81 @@
     ],
     "read_wpm": 180
   },
+  "articles": {
+    "category": "Articles",
+    "source_repo": "sanko/sanko.github.io"
+  },
+  "projects": {
+    "sources": [
+      {
+        "repo": "sanko/Affix.pm",
+        "name": "Affix.pm",
+        "blurb": "A JIT compiled Foreign Function Interface eXtension for Perl",
+        "tags": ["jit", "codegen", "compilers", "perl"],
+        "order": 1
+      },
+      {
+        "repo": "sanko/infix",
+        "name": "infix",
+        "blurb": "A modern, JIT-powered, and dependency-free Foreign Function Interface (FFI) library and type introspection engine for C. Dynamically call native functions and create secure callbacks using simple, human-readable signatures. Ideal for language bindings, plugins, and dynamic library interactions.",
+        "tags": ["compilers", "jit", "c"],
+        "order": 2
+      },
+      {
+        "repo": "sanko/libui.pm",
+        "name": "libui.pm",
+        "blurb": "Perl bindings for libui, providing a simple API for native desktop applications.",
+        "tags": ["compilers", "runtimes"],
+        "order": 4
+      },
+      {
+        "repo": "sanko/Bluesky.pm",
+        "name": "Bluesky.pm",
+        "blurb": "A Perl client library for the AT Protocol and Bluesky social network.",
+        "tags": ["network", "social"],
+        "order": 5
+      },
+      {
+        "repo": "sanko/At.pm",
+        "name": "At.pm",
+        "blurb": "Low-level AT Protocol primitives for Perl. Handles identity, repository, and label operations.",
+        "tags": ["network", "social"],
+        "order": 6
+      },
+      {
+        "repo": "sanko/Net-BitTorrent.pm",
+        "name": "Net::BitTorrent",
+        "blurb": "A complete implementation of the BitTorrent peer wire protocol with extension support. Complete with BitTorrent v2 support!",
+        "tags": ["network", "encryption"],
+        "order": 7
+      },
+      {
+        "repo": "Perl-SDL3/SDL3.pm",
+        "name": "SDL3.pm",
+        "blurb": "Perl bindings for SDL3. Multimedia, input, and window management for games and applications.",
+        "tags": ["runtimes"],
+        "order": 9
+      },
+            {
+        "repo": "sanko/Noise.pm",
+        "name": "Noise.pm",
+        "blurb": "Pure Perl implementation of the Noise Protocol Framework",
+        "tags": ["network"],
+        "order": 9
+      }
+    ]
+  },
+  "giscus": {
+    "enabled": false,
+    "repo": "sanko/sanko.github.io",
+    "repoId": "",
+    "category": "Articles",
+    "categoryId": "",
+    "mapping": "pathname",
+    "theme": "preferred_color_scheme",
+    "reactionsEnabled": true,
+    "lazyLoading": true
+  },
   "github": {
     "sources": [
       {

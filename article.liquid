@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" id="metaThemeColor" content="#DA291C">
+  <title>{{ article.title }} // {{ profile.name }}</title>
+  <meta name="description" content="{{ article.excerpt }}">
+  <meta name="author" content="{{ profile.name }}">
+
+  <!-- Canonical -->
+  <link rel="canonical" href="{{ profile.url }}/articles/{{ article.slug }}/">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="{{ article.title }}">
+  <meta property="og:description" content="{{ article.excerpt }}">
+  <meta property="og:url" content="{{ profile.url }}/articles/{{ article.slug }}/">
+  <meta property="og:site_name" content="{{ profile.name }}">
+  {% if profile.og_image %}<meta property="og:image" content="{{ profile.og_image }}">{% endif %}
+
+  <!-- Feeds -->
+  {% for feed in feeds %}<link rel="alternate" type="{{ feed.mime }}" title="{{ feed.title }}" href="{{ feed.file }}" />
+  {% endfor %}
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;700&family=Playfair+Display:wght@400;700&family=DM+Sans:wght@400;700&family=Fraunces:opsz,wght,9..144,400;9..144,700&family=Outfit:wght@400;700&family=Anton&family=Bebas+Neue&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/sanko.css">
+
+  {% if analytics.plausible.enabled %}<!-- Plausible analytics -->
+  <script defer data-domain="{{ analytics.plausible.domain }}" src="{{ analytics.plausible.src }}"></script>
+  {% endif %}
+  {% if analytics.cloudflare.enabled %}<!-- Cloudflare analytics -->
+  <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "{{ analytics.cloudflare.token }}"}'></script>
+  {% endif %}
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "{{ article.title }}",
+    "author": {
+      "@type": "Person",
+      "name": "{{ profile.name }}",
+      "url": "{{ profile.url }}"
+    },
+    "datePublished": "{{ article.date | date: "%Y-%m-%dT%H:%M:%S%z" }}",
+    "dateModified": "{{ article.date | date: "%Y-%m-%dT%H:%M:%S%z" }}",
+    "publisher": {
+      "@type": "Organization",
+      "name": "{{ profile.name }}"
+    }
+  }
+  </script>
+
+  <script>
+    (function() {
+      var c = localStorage.getItem('swiss-color') || '#DA291C';
+      document.documentElement.style.setProperty('--primary', c);
+      document.documentElement.style.backgroundColor = c;
+      var m = document.getElementById('metaThemeColor');
+      if (m) m.setAttribute('content', c);
+      var f = localStorage.getItem('swiss-font');
+      if (f) {
+        document.documentElement.style.setProperty('--font', f);
+        var fontName = f.split(',')[0].replace(/['"]/g, '').trim();
+        var l = document.createElement('link');
+        l.rel = 'stylesheet';
+        l.href = 'https://fonts.googleapis.com/css2?family=' + fontName.replace(/ /g,'+') + ':wght@400;700;900&display=swap';
+        document.head.appendChild(l);
+      }
+    })();
+  </script>
+</head>
+<body class="swiss-page tufte-body">
+
+  <div class="reading-progress" aria-hidden="true"></div>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <nav class="swiss-nav">
+    <a href="/" class="nav-mark" aria-label="Home">SR</a>
+    <button type="button" class="nav-settings" id="settingsToggle" aria-expanded="false" aria-controls="settingsPanel" aria-label="Toggle display settings">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+    </button>
+  </nav>
+
+  <div class="settings-panel" id="settingsPanel" hidden>
+    <div class="settings-group">
+      <label class="settings-label" for="fontSelect">Typeface</label>
+      <select class="settings-select" id="fontSelect"></select>
+    </div>
+    <div class="settings-group">
+      <label class="settings-label">Accent Color</label>
+      <div class="color-presets" aria-label="Color presets">
+        <button type="button" class="preset-btn" data-color="#DA291C" style="--swatch: #DA291C" aria-label="Swiss Red"></button>
+        <button type="button" class="preset-btn" data-color="#D4FF00" style="--swatch: #D4FF00" aria-label="Chartreuse"></button>
+        <button type="button" class="preset-btn" data-color="#FF1493" style="--swatch: #FF1493" aria-label="Deep Pink"></button>
+        <button type="button" class="preset-btn" data-color="#0055FF" style="--swatch: #0055FF" aria-label="Cobalt Blue"></button>
+        <button type="button" class="preset-btn" data-color="#FF5E00" style="--swatch: #FF5E00" aria-label="Safety Orange"></button>
+        <button type="button" class="preset-btn" data-color="#8A2BE2" style="--swatch: #8A2BE2" aria-label="Electric Purple"></button>
+        <button type="button" class="preset-btn" data-color="#00E5FF" style="--swatch: #00E5FF" aria-label="Cyan"></button>
+        <button type="button" class="preset-btn" data-color="#111111" style="--swatch: #111111" aria-label="Pitch Black"></button>
+      </div>
+      <div class="color-row">
+        <label for="colorPicker" class="sr-only" style="display:none;">Custom color picker</label>
+        <input type="color" class="settings-color" id="colorPicker" value="#da291c">
+        <span class="color-hex" id="colorHex" aria-hidden="true">#DA291C</span>
+      </div>
+    </div>
+    <div class="settings-group settings-close-row">
+      <small class="settings-hint">Click <kbd>ESC</kbd> or tap outside to close</small>
+    </div>
+  </div>
+
+  <main id="main-content">
+    <header class="post-header">
+      <h1 class="post-title">{{ article.title }}</h1>
+      <div class="post-meta">
+        <span><time datetime="{{ article.date | date: "%Y-%m-%d" }}">{{ article.date | date: "%B %d, %Y" }}</time></span>
+        {% if article.readTime %}<span>{{ article.readTime }} Min Read</span>{% endif %}
+      </div>
+    </header>
+
+    <article class="post-content">
+      {{ article.body | markdown }}
+    </article>
+
+    {% if giscus.enabled %}
+    <section class="comments" id="comments">
+      <h2>Comments</h2>
+      <script src="https://giscus.app/client.js"
+        data-repo="{{ giscus.repo }}"
+        data-repo-id="{{ giscus.repoId }}"
+        data-category="{{ giscus.category }}"
+        data-category-id="{{ giscus.categoryId }}"
+        data-mapping="{{ giscus.mapping | default: 'pathname' }}"
+        data-theme="{{ giscus.theme | default: 'preferred_color_scheme' }}"
+        data-reactions-enabled="{% if giscus.reactionsEnabled %}1{% else %}0{% endif %}"
+        data-lazy-loading="{% if giscus.lazyLoading %}1{% else %}0{% endif %}"
+        crossorigin="anonymous"
+        async>
+      </script>
+    </section>
+    {% endif %}
+  </main>
+<!--
+  <footer class="swiss-footer">
+    <div class="copyright">{{ profile.name }} &copy; {{ year_range }}</div>
+    <nav class="social-links">
+      {% for link in profile.socials %}
+      <a href="{{ link.url }}">{{ link.name }}</a>
+      {% endfor %}
+    </nav>
+  </footer>
+-->
+  <script src="/sanko.js"></script>
+</body>
+</html>
