@@ -61,8 +61,22 @@
   const toggle = document.getElementById('settingsToggle');
   const panel = document.getElementById('settingsPanel');
   const root = document.documentElement;
-  const themeColorMeta = document.getElementById('metaThemeColor');
-  const mainForm = document.getElementById('mainForm');
+  const mainForm = document.getElementById('mainForm'); // Only exists on index.html
+
+  // Helper Function: Forces Mobile Safari / Android Chrome to repaint status bar live
+  function updateThemeColorMeta(color) {
+    root.style.setProperty('--primary', color);
+
+    // Removing and re-inserting the <meta> tag forces mobile browser engines to update immediately
+    let meta = document.getElementById('metaThemeColor');
+    if (meta) meta.remove();
+
+    meta = document.createElement('meta');
+    meta.id = 'metaThemeColor';
+    meta.name = 'theme-color';
+    meta.content = color;
+    document.head.appendChild(meta);
+  }
 
   // URL Linkability & State Management (Index.html only)
   function syncUrlState() {
@@ -85,43 +99,8 @@
     }
   }
 
-  // Filter matching logic
-  function updateFilterMatches() {
-    const checkedBoxes = document.querySelectorAll('.filter-cb:checked');
-    const anyChecked = checkedBoxes.length > 0;
-    
-    // Get all filterable rows
-    const projRows = document.querySelectorAll('.proj-row[data-tags]');
-    const articleRows = document.querySelectorAll('.article-row[data-tags]');
-    
-    if (!anyChecked) {
-      // No filters active - show all
-      projRows.forEach(row => row.classList.remove('is-match'));
-      articleRows.forEach(row => row.classList.remove('is-match'));
-      return;
-    }
-    
-    // Get active filter values
-    const activeFilters = Array.from(checkedBoxes).map(cb => cb.value);
-    
-    // Check each row against active filters
-    projRows.forEach(row => {
-      const tags = row.dataset.tags.split(/\s+/);
-      const hasMatch = activeFilters.some(f => tags.includes(f));
-      row.classList.toggle('is-match', hasMatch);
-    });
-    
-    articleRows.forEach(row => {
-      const tags = row.dataset.tags.split(/\s+/);
-      const hasMatch = activeFilters.some(f => tags.includes(f));
-      row.classList.toggle('is-match', hasMatch);
-    });
-  }
-
   if (mainForm) {
     mainForm.addEventListener('change', () => {
-      updateFilterMatches();
-      
       const activeTags = Array.from(document.querySelectorAll('.filter-cb:checked')).map(cb => cb.value);
       const activeViewEl = document.querySelector('.view-cb:checked');
       const activeView = activeViewEl ? activeViewEl.value : null;
@@ -139,7 +118,6 @@
       clearBtn.addEventListener('click', (e) => {
         e.preventDefault();
         document.querySelectorAll('.filter-cb').forEach(cb => cb.checked = false);
-        updateFilterMatches();
         mainForm.dispatchEvent(new Event('change'));
       });
     }
@@ -156,23 +134,7 @@
       });
     });
 
-    // A11y: Let spacebar/enter trigger filter labels
-    document.querySelectorAll('.filter-label').forEach(lbl => {
-      lbl.addEventListener('keydown', (e) => {
-        if(e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          const inputId = lbl.getAttribute('for');
-          if (inputId) {
-            const cb = document.getElementById(inputId);
-            if (cb) cb.checked = !cb.checked;
-          }
-          mainForm.dispatchEvent(new Event('change'));
-        }
-      });
-    });
-
     syncUrlState();
-    updateFilterMatches();
   }
 
   // Settings Panel Initialization
@@ -208,15 +170,14 @@
     colorHex.textContent = savedColor.toUpperCase();
   }
 
-  // Event Listeners for Theme Changes
+  // Event Listeners for Live Theme Changes
   const presets = document.querySelectorAll('.preset-btn');
   presets.forEach(btn => {
     btn.addEventListener('click', () => {
       const color = btn.getAttribute('data-color');
       if (colorPicker) colorPicker.value = color;
       if (colorHex) colorHex.textContent = color.toUpperCase();
-      root.style.setProperty('--primary', color);
-      if (themeColorMeta) themeColorMeta.setAttribute('content', color);
+      updateThemeColorMeta(color); // Live updates mobile UI
       localStorage.setItem('swiss-color', color);
     });
   });
@@ -234,8 +195,7 @@
     colorPicker.addEventListener('input', () => {
       const val = colorPicker.value;
       if (colorHex) colorHex.textContent = val.toUpperCase();
-      root.style.setProperty('--primary', val);
-      if (themeColorMeta) themeColorMeta.setAttribute('content', val);
+      updateThemeColorMeta(val); // Live updates mobile UI on scrubbing
       localStorage.setItem('swiss-color', val);
     });
   }
