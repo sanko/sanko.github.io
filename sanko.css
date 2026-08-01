@@ -65,7 +65,7 @@ button { font: inherit; border: none; background: none; cursor: pointer; }
 .swiss-page { background: var(--primary); color: color-mix(in oklch, var(--primary) 10%, contrast-color(var(--primary))); font-family: var(--font); }
 ::selection { background: contrast-color(var(--primary)); color: var(--primary); }
 
-.swiss-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; padding: var(--pad-y) var(--pad-x); font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: color-mix(in oklch, var(--primary) 10%, contrast-color(var(--primary))); font-family: var(--font); }
+.swiss-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; padding: var(--pad-y) var(--pad-x); font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: color-mix(in oklch, var(--primary) 10%, contrast-color(var(--primary))); font-family: var(--font); background-color: var(--primary); }
 .nav-mark { font-weight: 900; letter-spacing: 0.15em; text-decoration: none; color: inherit; transition: color 0.2s; }
 .nav-mark:hover { color: contrast-color(var(--primary)); }
 .nav-settings { padding: 0.25rem; opacity: 0.5; transition: opacity 0.15s, color 0.2s; color: inherit; }
@@ -74,7 +74,6 @@ button { font: inherit; border: none; background: none; cursor: pointer; }
 .settings-panel { position: fixed; top: 4rem; right: var(--pad-x); z-index: 99; background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: var(--rad); padding: var(--pad-y) 1.5rem; min-width: 250px; opacity: 0; transform: translateY(-6px); transition: opacity 0.2s, transform 0.2s; pointer-events: none; color: var(--panel-text); font-family: var(--font); }
 .settings-panel.open { opacity: 1; transform: translateY(0); pointer-events: auto; }
 .settings-group { margin-bottom: 1.25rem; }
-.settings-group:last-of-type { margin-bottom: 0; }
 .settings-label { display: block; font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--panel-label); margin-bottom: 0.5rem; }
 .settings-select { width: 100%; background: var(--panel-input-bg); color: var(--panel-text); border: 1px solid var(--panel-border); border-radius: var(--rad-sm); padding: 0.45rem 0.6rem; font-family: var(--font); font-size: 0.8rem; cursor: pointer; }
 .color-presets { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
@@ -183,6 +182,12 @@ button { font: inherit; border: none; background: none; cursor: pointer; }
    ARTICLE POST (Tufte/Swiss Hybrid)
    ========================================================================== */
 .tufte-body { background-color: var(--primary); color: color-mix(in oklch, var(--primary) 10%, contrast-color(var(--primary))); font-family: var(--font-serif); font-weight: 400; transition: background-color 0.2s, color 0.2s; }
+.tufte-body {
+  background-color: var(--primary);
+  color: color-mix(in oklch, var(--primary) 10%, contrast-color(var(--primary)));
+  font-family: var(--font-serif);
+  font-weight: 400;
+}
 .tufte-body ::selection { background: contrast-color(var(--primary)); color: var(--primary); }
 
 /* Scroll Progress Bar */
