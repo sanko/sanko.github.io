@@ -194,7 +194,21 @@
           {% for article in year_group.articles %}
           <article class="article-row" data-tags="{{ article.tags | join: ' ' }}">
             <a href="/articles/{{ article.slug }}/" class="article-link-wrap">
-              <div class="article-meta"><time datetime="{{ article.date | date: "%Y-%m-%d" }}">{{ article.date | date: "%b %d" }}</time></div>
+            {% assign num = article.date | date: "%d" %}
+            {% assign last_digits = num | modulo: 100 %}
+
+            {%- if last_digits == 11 or last_digits == 12 or last_digits == 13 -%}
+              {%- assign suffix = 'th' -%}
+            {%- else -%}
+              {%- assign last_digit = num | modulo: 10 -%}
+              {%- case last_digit -%}
+                {%- when 1 -%}{%- assign suffix = 'st' -%}
+                {%- when 2 -%}{%- assign suffix = 'nd' -%}
+                {%- when 3 -%}{%- assign suffix = 'rd' -%}
+                {%- else -%}{%- assign suffix = 'th' -%}
+              {%- endcase -%}
+            {%- endif -%}
+              <div class="article-meta"><time datetime="{{ article.date | date: "%Y-%m-%d" }}">{{ article.date | date: "%b %d" }}{{ suffix }}</time></div>
               <div class="article-content">
                 <h3 class="article-title">{{ article.title }}</h3>
                 <p class="article-desc">{{ article.excerpt }}</p>
