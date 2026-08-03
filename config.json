@@ -79,7 +79,7 @@
   },
   "giscus": {
     "enabled": true,
-    "theme": "transparent_dark",
+    "theme": "https://sankorobinson.com/giscus-theme.css",
     "reactionsEnabled": true,
     "lazyLoading": true,
     "repos": []

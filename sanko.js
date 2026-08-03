@@ -84,6 +84,68 @@
       meta.name = 'theme-color';
       meta.content = color;
       document.head.appendChild(meta);
+
+      giscusAccent = color;
+      pushGiscusTheme();
+    }
+
+    // Live giscus theming: the widget iframe can't read our --primary, so we
+    // push an accent-tinted theme (data URL) into it via postMessage setConfig.
+    const GISCUS_THEME_URL = 'https://sankorobinson.com/giscus-theme.css';
+    let giscusAccent = null;
+    let giscusFrame = null;
+
+    function parseHex(hex) {
+      const m = String(hex || '').replace('#', '').trim();
+      if (m.length === 3) return [parseInt(m[0] + m[0], 16), parseInt(m[1] + m[1], 16), parseInt(m[2] + m[2], 16)];
+      if (m.length === 6) return [parseInt(m.slice(0, 2), 16), parseInt(m.slice(2, 4), 16), parseInt(m.slice(4, 6), 16)];
+      return [218, 41, 28];
+    }
+
+    function giscusThemeUrl(accent) {
+      const [r, g, b] = parseHex(accent);
+      const css =
+        '@import url("' + GISCUS_THEME_URL + '");' +
+        'main{' +
+        '--color-accent-fg:' + accent + ';' +
+        '--color-accent-emphasis:' + accent + ';' +
+        '--color-accent-muted:rgba(' + r + ',' + g + ',' + b + ',0.4);' +
+        '--color-accent-subtle:rgba(' + r + ',' + g + ',' + b + ',0.1);' +
+        '--color-btn-primary-bg:' + accent + ';' +
+        '--color-btn-primary-hover-bg:color-mix(in srgb,' + accent + ' 85%,#000);' +
+        '--color-btn-primary-selected-bg:' + accent + '}';
+      return 'data:text/css;charset=utf-8,' + encodeURIComponent(css);
+    }
+
+    function pushGiscusTheme() {
+      if (!giscusFrame || !giscusAccent) return;
+      try {
+        giscusFrame.contentWindow.postMessage(
+          { giscus: { setConfig: { theme: giscusThemeUrl(giscusAccent) } } },
+          '*'
+        );
+      } catch (e) {}
+    }
+
+    function watchGiscus() {
+      let observer = null;
+      const find = () => {
+        const frame = document.querySelector('iframe.giscus-frame');
+        if (!frame) return false;
+        if (frame !== giscusFrame) {
+          giscusFrame = frame;
+          frame.addEventListener('load', pushGiscusTheme);
+          pushGiscusTheme();
+          setTimeout(pushGiscusTheme, 1000);
+          setTimeout(pushGiscusTheme, 3000);
+        }
+        if (observer) observer.disconnect();
+        return true;
+      };
+      if (find()) return;
+      if (typeof MutationObserver === 'undefined') return;
+      observer = new MutationObserver(find);
+      observer.observe(document.body, { childList: true, subtree: true });
     }
 
     // URL Linkability & State Management (Index.html only)
@@ -244,6 +306,7 @@
     });
 
     initCopyButtons();
+    watchGiscus();
   }
 
   function initCopyButtons() {
