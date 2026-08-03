@@ -78,15 +78,11 @@
     ]
   },
   "giscus": {
-    "enabled": false,
-    "repo": "sanko/sanko.github.io",
-    "repoId": "",
-    "category": "Articles",
-    "categoryId": "",
-    "mapping": "pathname",
-    "theme": "preferred_color_scheme",
+    "enabled": true,
+    "theme": "transparent_dark",
     "reactionsEnabled": true,
-    "lazyLoading": true
+    "lazyLoading": true,
+    "repos": []
   },
   "github": {
     "sources": [

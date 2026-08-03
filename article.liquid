@@ -119,6 +119,7 @@
       <div class="post-meta">
         <span><time datetime="{{ article.date | date: "%Y-%m-%d" }}">{{ article.date | date: "%B %d, %Y" }}</time></span>
         {% if article.readTime %}<span>{{ article.readTime }} Min Read</span>{% endif %}
+        {% if article.url %}<span class="post-discuss"><a href="{{ article.url }}" target="_blank" rel="noopener noreferrer">Discuss on GitHub ↗</a></span>{% endif %}
       </div>
     </header>
 
@@ -126,15 +127,16 @@
       {{ article.body | markdown }}
     </article>
 
-    {% if giscus.enabled %}
+    {% if article.showComments %}
     <section class="comments" id="comments">
       <h2>Comments</h2>
       <script src="https://giscus.app/client.js"
-        data-repo="{{ giscus.repo }}"
-        data-repo-id="{{ giscus.repoId }}"
-        data-category="{{ giscus.category }}"
-        data-category-id="{{ giscus.categoryId }}"
-        data-mapping="{{ giscus.mapping | default: 'pathname' }}"
+        data-repo="{{ article.owner }}/{{ article.repo }}"
+        data-repo-id="{{ article.repoId }}"
+        data-category="{{ article.category }}"
+        data-category-id="{{ article.categoryId }}"
+        data-mapping="number"
+        data-term="{{ article.discussionNumber }}"
         data-theme="{{ giscus.theme | default: 'preferred_color_scheme' }}"
         data-reactions-enabled="{% if giscus.reactionsEnabled %}1{% else %}0{% endif %}"
         data-lazy-loading="{% if giscus.lazyLoading %}1{% else %}0{% endif %}"

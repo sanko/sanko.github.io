@@ -7,3 +7,4 @@ feeds/
 package-lock.json
 .env
 .cache.json
+redesign/

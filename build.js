@@ -53,6 +53,13 @@ function stripMarkdown(text, maxLen = 150) {
     return t.substring(0, maxLen).trim() + '...';
 }
 
+// Cookbook titles are prepended with "Chapter XX: " which should not be
+// displayed in the index or on the article pages.
+function cleanTitle(title) {
+    if (!title) return title;
+    return String(title).replace(/^Chapter\s+(?:\d+|[IVXLCDM]+)\s*:\s*/i, '').trim();
+}
+
 // State
 let githubStatus = null;
 let nowPost = null;
@@ -157,10 +164,11 @@ async function fetchGitHub() {
 
     const query = `query($owner: String!, $name: String!, $after: String) {
       repository(owner: $owner, name: $name) {
+        id
         primaryLanguage { name, color }
         discussions(first: 100, orderBy: {field: CREATED_AT, direction: DESC}, after: $after) {
           pageInfo { hasNextPage, endCursor }
-          nodes { title, url, createdAt, body, author { login }, category { name }, labels(first: 5) { nodes { name } }, comments { totalCount }, reactions { totalCount } }
+          nodes { title, url, createdAt, body, author { login }, category { name, id }, labels(first: 5) { nodes { name } }, comments { totalCount }, reactions { totalCount } }
         }
         issues(first: 10, orderBy: {field: CREATED_AT, direction: DESC}) { nodes { title, url, createdAt, body, author { login }, labels(first: 5) { nodes { name } }, comments { totalCount }, reactions { totalCount } } }
         releases(first: 5, orderBy: {field: CREATED_AT, direction: DESC}) { nodes { tagName, url, publishedAt, description, name } }
@@ -182,8 +190,11 @@ async function fetchGitHub() {
             const cacheKey = `github-${source.owner}-${repo}`;
             if (cache[cacheKey] && !process.env.REFRESH_CACHE) {
                 console.log(`Using cached data for ${repo}`);
-                // Rehydrate dates
-                cache[cacheKey].forEach(item => item.date = new Date(item.date));
+                // Rehydrate dates and strip "Chapter XX:" prefixes
+                cache[cacheKey].forEach(item => {
+                    item.date = new Date(item.date);
+                    item.title = cleanTitle(item.title);
+                });
                 allData.push(...cache[cacheKey]);
                 continue;
             }
@@ -222,7 +233,8 @@ async function fetchGitHub() {
                         discussions,
                         issues,
                         releases,
-                        primaryLanguage
+                        primaryLanguage,
+                        id: repoId
                     } = json.data.repository;
                     const repoSlug = slugify(repo);
                     const fullRepoName = `${source.owner}/${repo}`;
@@ -258,14 +270,18 @@ async function fetchGitHub() {
                             service: 'github',
                             owner: source.owner,
                             repo: repo,
+                            repoId: repoId,
                             language: primaryLanguage,
                             date: new Date(item.createdAt || item.publishedAt),
-                            title: item.title || item.name || item.tagName,
+                            title: cleanTitle(item.title || item.name || item.tagName),
                             url: item.url,
                             body: item.body || item.description || "",
                             wordCount: wordCount,
                             readTime: readTime,
                             tags: [...new Set(finalTags)],
+                            discussionNumber: item.url && item.url.match(/\/discussions\/(\d+)/) ? item.url.match(/\/discussions\/(\d+)/)[1] : null,
+                            category: item.category?.name,
+                            categoryId: item.category?.id,
                             metrics: {
                                 comments: item.comments?.totalCount || 0,
                                 reactions: item.reactions?.totalCount || 0
@@ -678,8 +694,8 @@ function prepareProjectsData(allContent) {
                 ...project,
                 url: `https://github.com/${project.repo}`,
                 articles: relatedArticles.map(article => ({
-                    title: article.title,
-                    slug: slugify(article.title),
+                    title: cleanTitle(article.title),
+                    slug: slugify(cleanTitle(article.title)),
                     date: article.date,
             excerpt: article.summary || stripMarkdown(article.body),
                     tags: article.tags
@@ -703,13 +719,15 @@ function prepareArticlesTimeline(allContent) {
         if (!articlesByYear[year]) articlesByYear[year] = [];
         
         articlesByYear[year].push({
-            title: article.title,
-            slug: slugify(article.title),
+            title: cleanTitle(article.title),
+            slug: slugify(cleanTitle(article.title)),
             date: article.date,
             excerpt: article.summary || stripMarkdown(article.body),
             tags: article.tags,
             readTime: article.readTime || Math.ceil((article.wordCount || 0) / (config.profile.read_wpm || 200)),
-            body: article.body
+            body: article.body,
+            url: article.url,
+            repo: article.repo
         });
     });
     
@@ -921,7 +939,8 @@ async function generateArticlePages(articles, data) {
     }
 
     for (const article of articles) {
-        const slug = slugify(article.title);
+        const title = cleanTitle(article.title);
+        const slug = slugify(title);
         const articleDir = path.join(articlesDir, slug);
 
         // Create article directory
@@ -930,12 +949,19 @@ async function generateArticlePages(articles, data) {
         }
 
         // Render article page
+        const giscus = data.giscus || {};
+        const giscusRepos = giscus.repos || [];
+        const showComments = !!(giscus.enabled && article.discussionNumber && article.repoId &&
+            (giscusRepos.length === 0 || giscusRepos.includes(`${article.owner}/${article.repo}`)));
+
         const html = await engine.parseAndRender(articleTemplate, {
             ...data,
             article: {
                 ...article,
+                title: title,
                 slug: slug,
-                readTime: article.readTime || Math.ceil((article.wordCount || 0) / (config.profile.read_wpm || 200))
+                readTime: article.readTime || Math.ceil((article.wordCount || 0) / (config.profile.read_wpm || 200)),
+                showComments: showComments
             }
         });
 

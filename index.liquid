@@ -228,7 +228,8 @@
                 {%- else -%}{%- assign suffix = 'th' -%}
               {%- endcase -%}
             {%- endif -%}
-              <div class="article-meta"><time datetime="{{ article.date | date: "%Y-%m-%d" }}">{{ article.date | date: "%b %d" }}{{ suffix }}</time></div>
+              <div class="article-meta"><time datetime="{{ article.date | date: "%Y-%m-%d" }}">{{ article.date | date: "%b %d" }}{{ suffix }}</time>
+                {% if article.repo %}<span class="article-repo">#{{ article.repo }}</span>{% endif %}</div>
               <div class="article-content">
                 <h3 class="article-title">{{ article.title }}</h3>
                 <p class="article-desc">{{ article.excerpt }}</p>

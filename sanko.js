@@ -242,6 +242,62 @@
         closePanel();
       }
     });
+
+    initCopyButtons();
+  }
+
+  function initCopyButtons() {
+    const pres = document.querySelectorAll('.post-content pre');
+    pres.forEach(pre => {
+      if (pre.querySelector('.copy-btn')) return;
+      const code = pre.querySelector('code');
+      if (!code) return;
+
+      const wrap = document.createElement('div');
+      wrap.className = 'code-block';
+      pre.parentNode.insertBefore(wrap, pre);
+      wrap.appendChild(pre);
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'copy-btn';
+      btn.textContent = 'Copy';
+      btn.setAttribute('aria-label', 'Copy code block');
+      wrap.appendChild(btn);
+
+      btn.addEventListener('click', () => {
+        const text = code.textContent;
+        const done = () => {
+          btn.textContent = 'Copied';
+          btn.setAttribute('aria-label', 'Code block copied');
+          setTimeout(() => {
+            btn.textContent = 'Copy';
+            btn.setAttribute('aria-label', 'Copy code block');
+          }, 2000);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done).catch(() => {
+            fallbackCopy(text);
+            done();
+          });
+        } else {
+          fallbackCopy(text);
+          done();
+        }
+      });
+    });
+  }
+
+  function fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
   }
 
   // Waits for DOM to finish parsing before attaching listeners
