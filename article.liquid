@@ -136,10 +136,14 @@
         data-category="{{ article.category }}"
         data-category-id="{{ article.categoryId }}"
         data-mapping="number"
+        data-strict="0"
+        data-reactions-enabled="{% if giscus.reactionsEnabled %}1{% else %}0{% endif %}"
+        data-emit-metadata="1"
+        data-input-position="bottom"
         data-term="{{ article.discussionNumber }}"
         data-theme="{{ giscus.theme | default: 'preferred_color_scheme' }}"
-        data-reactions-enabled="{% if giscus.reactionsEnabled %}1{% else %}0{% endif %}"
-        data-lazy-loading="{% if giscus.lazyLoading %}1{% else %}0{% endif %}"
+        {% if giscus.lazyLoading %}data-loading="lazy"{% endif %}
+        data-lang="en"
         crossorigin="anonymous"
         async>
       </script>
