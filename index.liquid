@@ -181,7 +181,7 @@
 
               {% for project in projects %}
         <div class="proj-row" data-tags="{{ project.tags | join: ' ' }}">
-          <a href="#" class="proj-link-wrap" aria-label="Project: {{ project.name }}">
+          <a href="{{ project.url }}" class="proj-link-wrap" aria-label="Project: {{ project.name }}">
             <div class="proj-stack">
               <span class="proj-name">{{ project.name }}</span>
               <span class="proj-desc">{{ project.blurb }}</span>
@@ -245,4 +245,3 @@
 
 </body>
 </html>
-
