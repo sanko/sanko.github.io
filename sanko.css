@@ -5,6 +5,9 @@
 
 :root {
   --primary: #DA291C;
+  --primary-light: #DA291C;
+  --primary-dark: #7A1509;
+  color-scheme: light dark;
   --font: 'Inter', sans-serif;
   --font-serif: 'IBM Plex Serif', 'EB Garamond', Georgia, serif;
   --panel-bg: #1a1a1a;
@@ -23,6 +26,12 @@
   --max-w-article: 1400px;
   --transition: 0.35s ease-in-out;
   interpolate-size: allow-keywords;
+}
+
+/* Until the visitor picks an accent color, honor the browser light/dark
+   preference. */
+@media (prefers-color-scheme: dark) {
+  :root { --primary: var(--primary-dark); }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -56,11 +56,17 @@
 
   <script>
     (function() {
-      var c = localStorage.getItem('swiss-color') || '#DA291C';
-      document.documentElement.style.setProperty('--primary', c);
-      document.documentElement.style.backgroundColor = c;
+      var saved = localStorage.getItem('swiss-color');
+      var doc = document.documentElement;
       var m = document.getElementById('metaThemeColor');
-      if (m) m.setAttribute('content', c);
+      if (saved) {
+        doc.style.setProperty('--primary', saved);
+        doc.style.backgroundColor = saved;
+        if (m) m.setAttribute('content', saved);
+      } else {
+        var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (m) m.setAttribute('content', dark ? '#7A1509' : '#DA291C');
+      }
       var f = localStorage.getItem('swiss-font');
       if (f) {
         document.documentElement.style.setProperty('--font', f);

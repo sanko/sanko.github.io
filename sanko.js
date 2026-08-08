@@ -229,6 +229,11 @@
     const savedFont = localStorage.getItem('swiss-font');
     const savedColor = localStorage.getItem('swiss-color');
 
+    // Default accents used only while the visitor has not chosen a color.
+    // Must match --primary-light / --primary-dark in sanko.css.
+    const DEFAULT_LIGHT = '#DA291C';
+    const DEFAULT_DARK = '#7A1509';
+
     if (savedFont && select) {
       select.value = savedFont;
       const fontObj = FONTS.find(f => f.family === savedFont);
@@ -238,6 +243,20 @@
       colorPicker.value = savedColor;
       colorHex.textContent = savedColor.toUpperCase();
       updateThemeColorMeta(savedColor); // Ensures real-time sync on load
+    }
+
+    // With no saved accent, CSS --primary tracks the browser light/dark scheme
+    // automatically; keep the mobile chrome meta tag in step.
+    if (window.matchMedia) {
+      const scheme = window.matchMedia('(prefers-color-scheme: dark)');
+      const syncThemeMeta = () => {
+        if (localStorage.getItem('swiss-color')) return;
+        const meta = document.getElementById('metaThemeColor');
+        if (meta) meta.setAttribute('content', scheme.matches ? DEFAULT_DARK : DEFAULT_LIGHT);
+      };
+      if (scheme.addEventListener) scheme.addEventListener('change', syncThemeMeta);
+      else if (scheme.addListener) scheme.addListener(syncThemeMeta);
+      syncThemeMeta();
     }
 
     // Event Listeners for Live Theme Changes
