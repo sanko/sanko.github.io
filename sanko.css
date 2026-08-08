@@ -151,14 +151,15 @@ button { font: inherit; border: none; background: none; cursor: pointer; }
 /* BLUR/FOCUS STATES */
 .proj-list:has(.proj-name:hover, .proj-desc:hover, .proj-articles:hover,
 .proj-row:focus-within) .proj-row:not(:has(.proj-name:hover, .proj-desc:hover, .proj-articles:hover, :focus-within)),
-.archive-wrap:has(.article-row:hover, .article-row:focus-within) .article-row:not(:hover):not(:focus-within) { filter: blur(2px); opacity: 0.75; }
+.archive-wrap:has(.article-row:hover, .article-row:focus-within) .article-row:not(:hover):not(:focus-within) { filter: blur(.5px); opacity: 0.75; }
 
 /* Bleeding Inset Shadows */
 .proj-row::after, .article-row::after { content: ''; position: absolute; top: 0; bottom: 0; left: 0; right: -100vw; box-shadow: inset 0 1px 0 color-mix(in srgb, contrast-color(var(--primary)) 30%, transparent), inset 0 -1px 0 color-mix(in srgb, contrast-color(var(--primary)) 30%, transparent); opacity: 0; pointer-events: none; transition: opacity var(--transition); z-index: -1; }
 .proj-row:has(.proj-name:hover, .proj-desc:hover, .proj-articles:hover, :focus-within)::after, .article-row:hover::after, .article-row:focus-within::after { opacity: 1; }
 
-.proj-row:has(.proj-name:hover, .proj-desc:hover, .proj-articles:hover, :focus-within) .proj-name, .article-row:hover .article-title, .article-row:focus-within .article-title { -webkit-text-stroke: 2px currentColor; -webkit-text-fill-color: transparent; opacity: 0.2; }
-.article-row:hover .article-title, .article-row:focus-within .article-title { -webkit-text-stroke-width: 1.5px; opacity: 1; }
+.proj-row:has(.proj-name:hover, .proj-desc:hover, .proj-articles:hover, :focus-within) .proj-name
+/*, .article-row:hover .article-title, .article-row:focus-within .article-title*/ { -webkit-text-stroke: 2px currentColor; -webkit-text-fill-color: transparent; opacity: 0.2; }
+/*.article-row:hover .article-title, .article-row:focus-within .article-title { -webkit-text-stroke-width: 1.5px; opacity: 1; }*/
 .proj-row:has(.proj-name:hover, .proj-desc:hover, .proj-articles:hover, :focus-within) .proj-desc { opacity: 1; }
 .proj-row:has(.proj-name:hover, .proj-desc:hover, .proj-articles:hover, :focus-within) .proj-articles { opacity: 1; pointer-events: auto; }
 
