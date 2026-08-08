@@ -79,17 +79,17 @@
   <!-- ANTI-FOUC SCRIPT: Applies theme before the browser paints the first frame -->
   <script>
     (function() {
-      // 1. Fetch color or use the default Swiss Red
+      // Fetch color or use the default Swiss Red
       var c = localStorage.getItem('swiss-color') || '#DA291C';
       document.documentElement.style.setProperty('--primary', c);
 
-      // 2. FORCE the HTML canvas to paint instantly, killing the View Transition white flash
+      // FORCE the HTML canvas to paint instantly, killing the View Transition white flash
       document.documentElement.style.backgroundColor = c;
 
       var m = document.getElementById('metaThemeColor');
       if (m) m.setAttribute('content', c);
 
-      // 3. Fetch and inject fonts
+      // Fetch and inject fonts
       var f = localStorage.getItem('swiss-font');
       if (f) {
         document.documentElement.style.setProperty('--font', f);

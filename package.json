@@ -12,6 +12,7 @@
     "liquidjs": "^10.10.0",
     "markdown-it": "^13.0.2",
     "markdown-it-emoji": "^2.0.2",
+    "markdown-it-footnote": "^4.0.0",
     "node-fetch": "^2.7.0",
     "open-graph-scraper": "^6.11.0",
     "rss": "^1.2.2",

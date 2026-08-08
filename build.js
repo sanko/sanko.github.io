@@ -13,6 +13,8 @@ require('dotenv').config();
 // SETUP
 const config = require('./config.json');
 const emojiPlugin = require('markdown-it-emoji');
+const footnotePlugin = require('markdown-it-footnote');
+const sidenotePlugin = require('./markdown-it-sidenote');
 const hljs = require('highlight.js');
 
 // Markdown parser (used inside Liquid filter)
@@ -28,7 +30,9 @@ const md = new MarkdownIt({
             return ''; // use external default escaping
         }
     })
-    .use(emojiPlugin.full || emojiPlugin);
+    .use(emojiPlugin.full || emojiPlugin)
+    .use(footnotePlugin)
+    .use(sidenotePlugin);
 
 // Liquid Engine
 const engine = new Liquid();
@@ -677,19 +681,19 @@ async function fetchBitbucket() {
 // Prepare projects data with custom blurbs from config
 function prepareProjectsData(allContent) {
     const projects = config.projects?.sources || [];
-    
+
     return projects
         .sort((a, b) => (a.order || 0) - (b.order || 0))
         .map(project => {
             // Find related articles from discussions that mention this project
             const projectRepo = project.repo.split('/')[1];
-            const relatedArticles = allContent.filter(item => 
-                item.type === 'article' && 
+            const relatedArticles = allContent.filter(item =>
+                item.type === 'article' &&
                 item.service === 'github' &&
                 (item.body.toLowerCase().includes(project.name.toLowerCase()) ||
                  item.body.toLowerCase().includes(projectRepo.toLowerCase()))
             ).slice(0, 2);
-            
+
             return {
                 ...project,
                 url: `https://github.com/${project.repo}`,
@@ -706,18 +710,18 @@ function prepareProjectsData(allContent) {
 
 // Prepare articles timeline from discussions
 function prepareArticlesTimeline(allContent) {
-    const articles = allContent.filter(item => 
-        item.type === 'article' && 
+    const articles = allContent.filter(item =>
+        item.type === 'article' &&
         item.service === 'github'
     );
-    
+
     const articleTimeline = [];
     const articlesByYear = {};
-    
+
     articles.forEach(article => {
         const year = article.date.getFullYear();
         if (!articlesByYear[year]) articlesByYear[year] = [];
-        
+
         articlesByYear[year].push({
             title: cleanTitle(article.title),
             slug: slugify(cleanTitle(article.title)),
@@ -730,7 +734,7 @@ function prepareArticlesTimeline(allContent) {
             repo: article.repo
         });
     });
-    
+
     Object.keys(articlesByYear)
         .sort((a, b) => b - a)
         .forEach(year => {
@@ -739,7 +743,7 @@ function prepareArticlesTimeline(allContent) {
                 articles: articlesByYear[year].sort((a, b) => b.date - a.date)
             });
         });
-    
+
     return { articles, articleTimeline };
 }
 
