@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" id="metaThemeColor" content="#DA291C">
+  <meta name="theme-color" id="metaThemeColor" content="#FAFAFA">
   <title>{{ profile.name }}</title>
   <meta name="description" content="{{ profile.tagline }}">
   <meta name="author" content="{{ profile.name }}">
@@ -34,7 +34,7 @@
         if (m) m.setAttribute('content', saved);
       } else {
         var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (m) m.setAttribute('content', dark ? '#7A1509' : '#DA291C');
+        if (m) m.setAttribute('content', dark ? '#111111' : '#FAFAFA');
       }
       if (f) {
         doc.style.setProperty('--font', f);
@@ -101,7 +101,7 @@
         // No saved accent: let CSS --primary track the browser light/dark
         // scheme; reflect the effective color on the chrome meta tag.
         var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (m) m.setAttribute('content', dark ? '#7A1509' : '#DA291C');
+        if (m) m.setAttribute('content', dark ? '#111111' : '#FAFAFA');
       }
 
       // Fetch and inject fonts
@@ -160,8 +160,8 @@
         </div>
         <div class="color-row">
           <label for="colorPicker" class="sr-only" style="display:none;">Custom color picker</label>
-          <input type="color" class="settings-color" id="colorPicker" value="#da291c">
-          <span class="color-hex" id="colorHex" aria-hidden="true">#DA291C</span>
+          <input type="color" class="settings-color" id="colorPicker" value="#fafafa">
+          <span class="color-hex" id="colorHex" aria-hidden="true">#FAFAFA</span>
         </div>
       </div>
       <div class="settings-group settings-close-row">

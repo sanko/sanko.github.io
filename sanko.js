@@ -72,9 +72,14 @@
       // Update inline background-color on <html> (overrides the Anti-FOUC head style in real-time)
       root.style.backgroundColor = color;
 
-      // Update top fixed nav bar for mobile WebKit status bar sampling
+      // Update top fixed nav bar for mobile WebKit status bar sampling.
+      // Keep it nearly opaque (matching the CSS color-mix) so content scrolling
+      // underneath can't shift the bar to a different shade of the accent.
       const nav = document.querySelector('.swiss-nav');
-      if (nav) nav.style.backgroundColor = color;
+      if (nav) {
+        const [r, g, b] = parseHex(color);
+        nav.style.backgroundColor = 'rgba(' + r + ', ' + g + ', ' + b + ', 0.9)';
+      }
 
       // Force Mobile Chrome / Android theme-color meta tag refresh
       let meta = document.getElementById('metaThemeColor');
@@ -231,8 +236,8 @@
 
     // Default accents used only while the visitor has not chosen a color.
     // Must match --primary-light / --primary-dark in sanko.css.
-    const DEFAULT_LIGHT = '#DA291C';
-    const DEFAULT_DARK = '#7A1509';
+    const DEFAULT_LIGHT = '#FAFAFA';
+    const DEFAULT_DARK = '#111111';
 
     if (savedFont && select) {
       select.value = savedFont;

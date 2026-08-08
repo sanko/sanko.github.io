@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" id="metaThemeColor" content="#DA291C">
+  <meta name="theme-color" id="metaThemeColor" content="#FAFAFA">
   <title>{{ article.title }} // {{ profile.name }}</title>
   <meta name="description" content="{{ article.excerpt }}">
   <meta name="author" content="{{ profile.name }}">
@@ -65,7 +65,7 @@
         if (m) m.setAttribute('content', saved);
       } else {
         var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (m) m.setAttribute('content', dark ? '#7A1509' : '#DA291C');
+        if (m) m.setAttribute('content', dark ? '#111111' : '#FAFAFA');
       }
       var f = localStorage.getItem('swiss-font');
       if (f) {
@@ -110,8 +110,8 @@
       </div>
       <div class="color-row">
         <label for="colorPicker" class="sr-only" style="display:none;">Custom color picker</label>
-        <input type="color" class="settings-color" id="colorPicker" value="#da291c">
-        <span class="color-hex" id="colorHex" aria-hidden="true">#DA291C</span>
+        <input type="color" class="settings-color" id="colorPicker" value="#fafafa">
+        <span class="color-hex" id="colorHex" aria-hidden="true">#FAFAFA</span>
       </div>
     </div>
     <div class="settings-group settings-close-row">
