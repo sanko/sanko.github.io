@@ -199,7 +199,7 @@
           <a href="{{ project.url }}" class="proj-link-wrap" aria-label="Project: {{ project.name }}">
             <div class="proj-stack">
               <span class="proj-name">{{ project.name }}</span>
-              <span class="proj-desc">{{ project.blurb }}</span>
+              <span class="proj-desc">{{ project.blurb | markdownInline }}</span>
             </div>
           </a>
           {% if project.articles.size > 0 %}

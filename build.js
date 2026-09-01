@@ -34,10 +34,21 @@ const md = new MarkdownIt({
     .use(footnotePlugin)
     .use(sidenotePlugin);
 
+// Wrap pipe-generated <table> elements in the Tufte markup pattern
+// (.tufte-table-wrap > table.tufte-table) so the styles in sanko.css apply.
+md.renderer.rules.table_open = function () {
+    return '<div class="tufte-table-wrap">\n<table class="tufte-table">\n';
+};
+md.renderer.rules.table_close = function () {
+    return '</table>\n</div>\n';
+};
+
 // Liquid Engine
 const engine = new Liquid();
 // Register 'markdown' filter so we can use {{ item.body | markdown }} in the template
 engine.registerFilter('markdown', (str) => md.render(str || ''));
+// Register 'markdownInline' filter so blurbs (single lines) can be markdown-parsed
+engine.registerFilter('markdownInline', (str) => md.renderInline(str || ''));
 engine.registerFilter('pluralize', (count, singular, plural) => {
     return count === 1 ? singular : (plural || singular + 's');
 });

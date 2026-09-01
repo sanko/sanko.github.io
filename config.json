@@ -78,10 +78,10 @@
       {
         "repo": "sanko/Alien-Xmake",
         "name": "Alien::Xmake",
-        "blurb": "Cross-platform build utility and package manager. Alien::Xmake supports project generation, management, and compilation in everything from Assembly to Zig. Alien::Xrepo supports user-built repos, Conan, Vcpkg, homebrew, macman, clib, dub, etc.<br />See [xmake.io](https://xmake.io/) and [packages.xmake.io](https://packages.xmake.io/)",
+        "blurb": "Cross-platform build utility and package manager. Alien::Xmake supports project generation, management, and compilation in everything from Assembly to Zig. Alien::Xrepo supports user-built repos, Conan, Vcpkg, homebrew, macman, clib, dub, etc.",
         "tags": ["jit", "c", "zig"],
         "order": 10
-      }      
+      }
     ]
   },
   "giscus": {
