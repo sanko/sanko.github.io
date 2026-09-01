@@ -696,13 +696,13 @@ function prepareProjectsData(allContent) {
     return projects
         .sort((a, b) => (a.order || 0) - (b.order || 0))
         .map(project => {
-            // Find related articles from discussions that mention this project
-            const projectRepo = project.repo.split('/')[1];
+            // Find article discussions that belong to this project's repo
+            // (GitHub repo names resolve case-insensitively, so compare lowercase)
+            const projectRepo = project.repo.split('/')[1].toLowerCase();
             const relatedArticles = allContent.filter(item =>
                 item.type === 'article' &&
                 item.service === 'github' &&
-                (item.body.toLowerCase().includes(project.name.toLowerCase()) ||
-                 item.body.toLowerCase().includes(projectRepo.toLowerCase()))
+                String(item.repo).toLowerCase() === projectRepo
             ).slice(0, 2);
 
             return {
