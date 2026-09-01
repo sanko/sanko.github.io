@@ -154,6 +154,13 @@
         async>
       </script>
     </section>
+    {% else %}
+    {% if article.url %}
+    <section class="comments" id="comments">
+      <h2>Comments</h2>
+      <p class="comments-fallback"><a href="{{ article.url }}" target="_blank" rel="noopener noreferrer">Join the discussion on GitHub ↗</a></p>
+    </section>
+    {% endif %}
     {% endif %}
   </main>
 <!--

@@ -212,6 +212,9 @@ button { font: inherit; border: none; background: none; cursor: pointer; }
 .comments { max-width: var(--max-w-article); margin: 0 auto 8rem; padding: 0 var(--pad-x); }
 .comments h2 { font-family: var(--font); font-size: 0.8rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: color-mix(in srgb, contrast-color(var(--primary)) 60%, var(--primary)); border-bottom: 1px solid color-mix(in srgb, contrast-color(var(--primary)) 30%, transparent); padding-bottom: 0.5rem; margin-bottom: 2rem; }
 .giscus { width: 100%; }
+.comments-fallback { font-size: 1.1rem; margin: 0; }
+.comments-fallback a { color: inherit; text-decoration: none; background: -webkit-linear-gradient(var(--primary), var(--primary)), -webkit-linear-gradient(var(--primary), var(--primary)), -webkit-linear-gradient(currentColor, currentColor); background-size: 0.05em 1px, 0.05em 1px, 1px 1px; background-repeat: no-repeat, no-repeat, repeat-x; text-shadow: 0.03em 0 var(--primary), -0.03em 0 var(--primary), 0 0.03em var(--primary), 0 -0.03em var(--primary), 0.06em 0 var(--primary), -0.06em 0 var(--primary), 0.09em 0 var(--primary), -0.09em 0 var(--primary), 0.12em 0 var(--primary), -0.12em 0 var(--primary), 0.15em 0 var(--primary), -0.15em 0 var(--primary); background-position: 0% 93%, 100% 93%, 0% 93%; }
+.comments-fallback a:hover { color: contrast-color(var(--primary)); }
 
 /* Tufte 55% Content Constraint */
 .post-content > p, .post-content > h2, .post-content > h3, .post-content > h4,
