@@ -68,13 +68,20 @@
         "tags": ["runtimes"],
         "order": 9
       },
-            {
+      {
         "repo": "sanko/Noise.pm",
         "name": "Noise.pm",
         "blurb": "Pure Perl implementation of the Noise Protocol Framework",
         "tags": ["network"],
         "order": 9
-      }
+      },
+      {
+        "repo": "sanko/Alien-Xmake",
+        "name": "Alien::Xmake.pm",
+        "blurb": "Cross-platform build utility and package manager. Supports user-built repos, Conan, Vcpkg, homebrew, macman, clib, dub, etc.",
+        "tags": ["jit", "c", "zig"],
+        "order": 10
+      }      
     ]
   },
   "giscus": {
