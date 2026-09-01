@@ -116,14 +116,14 @@
 
     // Style the favicon with the same background as the page theme.
     function updateFavicon(color) {
-      let link = document.querySelector('link[rel="icon"]');
-      if (!link) {
-        link = document.createElement('link');
-        link.rel = 'icon';
-        link.type = 'image/svg+xml';
-        document.head.appendChild(link);
-      }
+      // Replacing (not just re-setting href) the favicon link is what reliably
+      // forces Chrome/Firefox to re-render a data:-URL SVG favicon on the fly.
+      document.querySelectorAll('link[rel~="icon"]').forEach(l => l.remove());
+      const link = document.createElement('link');
+      link.rel = 'icon';
+      link.type = 'image/svg+xml';
       link.href = faviconUrl(color);
+      document.head.appendChild(link);
     }
 
     // Live giscus theming: the widget iframe can't read our --primary, so we
