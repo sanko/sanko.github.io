@@ -92,6 +92,38 @@
 
       giscusAccent = color;
       pushGiscusTheme();
+
+      updateFavicon(color);
+    }
+
+    // Choose a readable foreground for the favicon mark: dark on light
+    // backgrounds, light on dark — mirroring the page's contrast treatment.
+    function computeContrastHex(hex) {
+      const [r, g, b] = parseHex(hex);
+      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+      return luminance > 0.5 ? '#111111' : '#FAFAFA';
+    }
+
+    function faviconUrl(color) {
+      const fg = computeContrastHex(color);
+      const svg =
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">' +
+        '<rect width="64" height="64" fill="' + color + '"/>' +
+        '<text x="32" y="45" font-family="Arial,Helvetica,sans-serif" font-size="34" font-weight="900" text-anchor="middle" fill="' + fg + '">SR</text>' +
+        '</svg>';
+      return 'data:image/svg+xml,' + encodeURIComponent(svg);
+    }
+
+    // Style the favicon with the same background as the page theme.
+    function updateFavicon(color) {
+      let link = document.querySelector('link[rel="icon"]');
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        link.type = 'image/svg+xml';
+        document.head.appendChild(link);
+      }
+      link.href = faviconUrl(color);
     }
 
     // Live giscus theming: the widget iframe can't read our --primary, so we
@@ -257,7 +289,9 @@
       const syncThemeMeta = () => {
         if (localStorage.getItem('swiss-color')) return;
         const meta = document.getElementById('metaThemeColor');
-        if (meta) meta.setAttribute('content', scheme.matches ? DEFAULT_DARK : DEFAULT_LIGHT);
+        const color = scheme.matches ? DEFAULT_DARK : DEFAULT_LIGHT;
+        if (meta) meta.setAttribute('content', color);
+        updateFavicon(color);
       };
       if (scheme.addEventListener) scheme.addEventListener('change', syncThemeMeta);
       else if (scheme.addListener) scheme.addListener(syncThemeMeta);
