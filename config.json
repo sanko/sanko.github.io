@@ -81,6 +81,13 @@
         "blurb": "Cross-platform build utility and package manager for Perl. Alien::Xmake supports project generation, management, and compilation in everything from Assembly to Zig. Alien::Xrepo supports user-built repos, Conan, Vcpkg, homebrew, pacman, Clib, dub, etc.",
         "tags": ["ffi", "c", "zig"],
         "order": 10
+      },
+      {
+        "repo": "sanko/Alien-Xmake-Project",
+        "name": "Alien::Xmake::Project",
+        "blurb": "Compose and drive an xmake project from Perl with a fluent API",
+        "tags": ["ffi", "c", "xmake"],
+        "order": 11
       }
     ]
   },
