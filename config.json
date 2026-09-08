@@ -94,6 +94,13 @@
         "name": "Alien::Xmake::Project",
         "blurb": "Compose and drive an xmake project from Perl with a fluent API",
         "tags": ["ffi", "c", "xmake"],
+        "order": 13
+      },
+      {
+        "repo": "sanko/Alien-Build-Plugin-Build-Xrepo",
+        "name": "Alien::Build::Plugin::Build::Xrepo",
+        "blurb": "An Alien::Build / Alien::Base alienfile plugin that drives the xrepo package manager: installs packages from the xmake registry during the build and maps them onto cflags, libs, version, bin_dir, alt, ffi_name, and dynamic_libs runtime props.",
+        "tags": ["ffi", "c", "xmake", "xrepo", "alien", "affix"],
         "order": 12
       }
     ]
