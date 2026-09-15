@@ -102,6 +102,13 @@
         "blurb": "An Alien::Build / Alien::Base alienfile plugin that drives the xrepo package manager: installs packages from the xmake registry during the build and maps them onto cflags, libs, version, bin_dir, alt, ffi_name, and dynamic_libs runtime props.",
         "tags": ["ffi", "c", "xmake", "xrepo", "alien", "affix"],
         "order": 12
+      },
+      {
+        "repo": "sanko/Acme-Parataxis.pm",
+        "name": "Parataxis.pm",
+        "blurb": "Real, OS thread and fibers for Perl.",
+        "tags": ["ffi", "c", "fibers", "coroutines", "threads", "affix"],
+        "order": 13
       }
     ]
   },
