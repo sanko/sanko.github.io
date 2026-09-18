@@ -66,6 +66,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=IBM+Plex+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;700&family=Playfair+Display:wght@400;700&family=DM+Sans:wght@400;700&family=Fraunces:opsz,wght,9..144,400;9..144,700&family=Outfit:wght@400;700&family=Anton&family=Bebas+Neue&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="sanko.css">
 
+  <!-- Per-repo filter rules (generated for repos that have articles) -->
+  <style>
+  {% for repo in article_repo_tags %}
+  .filter-wrap:has(#tag-{{ repo }}:checked) .article-row[data-tags~="{{ repo }}"] { height: auto; opacity: 1; visibility: visible; pointer-events: auto; }
+  .filter-wrap:has(#tag-{{ repo }}:checked) .year-group:has(.article-row[data-tags~="{{ repo }}"]) { height: auto; opacity: 1; visibility: visible; pointer-events: auto; margin-bottom: 4rem; }
+  .filter-wrap:has(#tag-{{ repo }}:checked) .repo-filter[data-tag="tag-{{ repo }}"] { background: color-mix(in oklch, var(--primary) 10%, contrast-color(var(--primary))); color: var(--primary); text-decoration: none; font-weight: 700; }
+  {% endfor %}
+  </style>
+
   {% if analytics.plausible.enabled %}<!-- Plausible analytics -->
   <script defer data-domain="{{ analytics.plausible.domain }}" src="{{ analytics.plausible.src }}"></script>
   {% endif %}
@@ -132,6 +141,9 @@
     <input type="checkbox" id="tag-parsers" class="filter-cb" value="parsers">
     <input type="checkbox" id="tag-codegen" class="filter-cb" value="codegen">
     <input type="checkbox" id="tag-jit" class="filter-cb" value="jit">
+    {% for repo in article_repo_tags %}
+    <input type="checkbox" id="tag-{{ repo }}" class="filter-cb" value="{{ repo }}">
+    {% endfor %}
 
     <!-- VIEW TOGGLES -->
     <input type="radio" name="view" id="view-projects" value="projects" class="view-cb" checked>
@@ -247,7 +259,7 @@
               {%- endcase -%}
             {%- endif -%}
               <div class="article-meta"><time datetime="{{ article.date | date: "%Y-%m-%d" }}">{{ article.date | date: "%b %d" }}{{ suffix }}</time>
-                {% if article.repo %}<span class="article-repo">#{{ article.repo }}</span>{% endif %}</div>
+                {% if article.repo %}<span class="article-repo filter-label repo-filter" data-tag="tag-{{ article.repo | slugify }}">#{{ article.repoDisplay }}</span>{% endif %}</div>
               <div class="article-content">
                 <h3 class="article-title">{{ article.title }}</h3>
                 <p class="article-desc">{{ article.excerpt }}</p>

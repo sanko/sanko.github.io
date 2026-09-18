@@ -55,6 +55,7 @@ engine.registerFilter('pluralize', (count, singular, plural) => {
 
 const rssParser = new Parser();
 const slugify = txt => txt.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+engine.registerFilter('slugify', slugify);
 
 function stripMarkdown(text, maxLen = 150) {
     let t = text.substring(0, 300);
@@ -73,6 +74,23 @@ function stripMarkdown(text, maxLen = 150) {
 function cleanTitle(title) {
     if (!title) return title;
     return String(title).replace(/^Chapter\s+(?:\d+|[IVXLCDM]+)\s*:\s*/i, '').trim();
+}
+
+// Map a GitHub repo name to the display name used on the projects page
+// (from config.projects.sources), so article tags show e.g. "Parataxis.pm"
+// instead of "Acme-Parataxis.pm".
+const repoDisplayNames = (() => {
+    const map = {};
+    (config.projects?.sources || []).forEach(project => {
+        const repo = (project.repo || '').split('/').pop().toLowerCase();
+        if (project.name) map[repo] = project.name;
+    });
+    return map;
+})();
+
+function displayRepoName(repo) {
+    if (!repo) return repo;
+    return repoDisplayNames[String(repo).toLowerCase()] || repo;
 }
 
 // State
@@ -742,7 +760,8 @@ function prepareArticlesTimeline(allContent) {
             readTime: article.readTime || Math.ceil((article.wordCount || 0) / (config.profile.read_wpm || 200)),
             body: article.body,
             url: article.url,
-            repo: article.repo
+            repo: article.repo,
+            repoDisplay: displayRepoName(article.repo)
         });
     });
 
@@ -870,6 +889,13 @@ function prepareTemplateData(allContent, uniqueTags) {
     // 6. Articles data
     const { articles, articleTimeline } = prepareArticlesTimeline(allContent);
 
+    // 6a. Unique repo tags referenced by articles (for the #repo filter labels)
+    const articleRepoTags = [...new Set(articles
+        .map(a => a.repo)
+        .filter(Boolean)
+        .map(r => slugify(r))
+    )];
+
     // 7. Filter tags for the new homepage
     const filterTags = collectFilterTags(articles, projects);
 
@@ -893,6 +919,7 @@ function prepareTemplateData(allContent, uniqueTags) {
         projects: projects,
         articles: articles,
         article_timeline: articleTimeline,
+        article_repo_tags: articleRepoTags,
         filter_tags: filterTags
     };
 }

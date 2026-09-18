@@ -240,6 +240,21 @@
         });
       });
 
+      // #repo tags on article rows act as filters. They live inside the
+      // article <a>, so intercept the click: toggle the tag's checkbox and
+      // stop it from navigating to the article.
+      document.addEventListener('click', (e) => {
+        const span = e.target.closest('.repo-filter[data-tag^="tag-"]');
+        if (!span || !mainForm) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const cb = document.getElementById(span.getAttribute('data-tag'));
+        if (cb) {
+          cb.checked = !cb.checked;
+          mainForm.dispatchEvent(new Event('change'));
+        }
+      });
+
       syncUrlState();
     }
 
