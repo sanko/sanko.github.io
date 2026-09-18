@@ -240,9 +240,8 @@
         });
       });
 
-      // #repo tags on article rows act as filters. They live inside the
-      // article <a>, so intercept the click: toggle the tag's checkbox and
-      // stop it from navigating to the article.
+      // #repo tags on article rows act as filters. They are spans (not real
+      // labels), so toggle the tag's checkbox manually.
       document.addEventListener('click', (e) => {
         const span = e.target.closest('.repo-filter[data-tag^="tag-"]');
         if (!span || !mainForm) return;
