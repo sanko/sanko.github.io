@@ -109,6 +109,20 @@
         "blurb": "Real, OS thread and fibers for Perl.",
         "tags": ["ffi", "c", "fibers", "coroutines", "threads", "affix"],
         "order": 13
+      },
+      {
+        "repo": "sanko/Algorithm-RateLimiter-TokenBucket.pm",
+        "name": "Algorithm::RateLimiter::TokenBucket",
+        "blurb": "Loop-agnostic token bucket rate limiter.",
+        "tags": ["networking", "rate-limiter"],
+        "order": 14
+      },
+      {
+        "repo": "sanko/anyevent-handle-throttle",
+        "name": "AnyEvent::Handle::Throttle",
+        "blurb": "AnyEvent::Handle subclass with user-defined up/down bandwidth cap.",
+        "tags": ["networking", "rate-limiter", "anyevent"],
+        "order": 15
       }
     ]
   },
