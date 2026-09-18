@@ -286,12 +286,9 @@ async function fetchGitHub() {
                             }
                         }
 
-                        // If the repo is part of a group, remove the individual repo tag
-                        // unless the group tag itself matches the repo tag
-                        let finalTags = [...tags, ...groups];
-                        if (groups.length > 0) {
-                            finalTags = finalTags.filter(t => t !== repoSlug || groups.includes(t));
-                        }
+                        // Keep the repo slug tag alongside any group tags so the
+                        // repo-level filters still match grouped repos' articles.
+                        const finalTags = [...new Set([...tags, ...groups])];
 
                         const wordCount = (item.body || item.description || "").split(/\s+/).filter(w => w.length > 0).length;
                         const wpm = config.profile.read_wpm || 200;
@@ -725,6 +722,7 @@ function prepareProjectsData(allContent) {
 
             return {
                 ...project,
+                repoTag: slugify(project.repo.split('/').pop()),
                 url: `https://github.com/${project.repo}`,
                 articles: relatedArticles.map(article => ({
                     title: cleanTitle(article.title),
@@ -1002,6 +1000,8 @@ async function generateArticlePages(articles, data) {
                 ...article,
                 title: title,
                 slug: slug,
+                repoDisplay: displayRepoName(article.repo),
+                repoTag: article.repo ? slugify(article.repo) : null,
                 readTime: article.readTime || Math.ceil((article.wordCount || 0) / (config.profile.read_wpm || 200)),
                 showComments: showComments
             }

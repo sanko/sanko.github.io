@@ -29,7 +29,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;700&family=Playfair+Display:wght@400;700&family=DM+Sans:wght@400;700&family=Fraunces:opsz,wght,9..144,400;9..144,700&family=Outfit:wght@400;700&family=Anton&family=Bebas+Neue&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/sanko.css">
+  <link rel="stylesheet" href="/sanko.css?v=5">
 
   {% if analytics.plausible.enabled %}<!-- Plausible analytics -->
   <script defer data-domain="{{ analytics.plausible.domain }}" src="{{ analytics.plausible.src }}"></script>
@@ -60,6 +60,17 @@
   <script>
     (function() {
       var saved = localStorage.getItem('swiss-color');
+      var paramColor = new URLSearchParams(window.location.search).get('color') || '';
+      if (paramColor) {
+        var hex = paramColor.replace(/^#/, '');
+        if (/^[0-9a-fA-F]{3}$/.test(hex)) {
+          hex = hex.charAt(0) + hex.charAt(0) + hex.charAt(1) + hex.charAt(1) + hex.charAt(2) + hex.charAt(2);
+        }
+        if (/^[0-9a-fA-F]{6}$/.test(hex)) {
+          saved = '#' + hex.toLowerCase();
+          try { localStorage.setItem('swiss-color', saved); } catch (e) {}
+        }
+      }
       var doc = document.documentElement;
       var m = document.getElementById('metaThemeColor');
       if (saved) {
@@ -71,6 +82,14 @@
         if (m) m.setAttribute('content', dark ? '#111111' : '#FAFAFA');
       }
       var f = localStorage.getItem('swiss-font');
+      var paramFont = new URLSearchParams(window.location.search).get('font') || '';
+      if (paramFont) {
+        var fontName = paramFont.trim().replace(/['"]/g, '');
+        var serifFonts = ['IBM Plex Serif','Playfair Display','Fraunces','Cardo','Cormorant Garamond','EB Garamond','Spectral','Source Serif 4','Literata','Newsreader','Hepta Slab','Domine','Zilla Slab','DM Serif Display'];
+        var fontGeneric = serifFonts.indexOf(fontName) !== -1 ? 'serif' : (fontName === 'IBM Plex Mono' ? 'monospace' : 'sans-serif');
+        f = (fontName.indexOf(' ') !== -1 ? "'" + fontName + "'" : fontName) + ', ' + fontGeneric;
+        try { localStorage.setItem('swiss-font', f); } catch (e) {}
+      }
       if (f) {
         document.documentElement.style.setProperty('--font', f);
         var fontName = f.split(',')[0].replace(/['"]/g, '').trim();
@@ -89,9 +108,14 @@
 
   <nav class="swiss-nav">
     <a href="/" class="nav-mark" aria-label="Home">SR</a>
-    <button type="button" class="nav-settings" id="settingsToggle" aria-expanded="false" aria-controls="settingsPanel" aria-label="Toggle display settings">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-    </button>
+    <div class="nav-actions">
+      <button type="button" class="nav-settings" id="settingsToggle" aria-expanded="false" aria-controls="settingsPanel" aria-label="Toggle display settings" title="Change the theme and font">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+      <button type="button" class="nav-settings" id="shareLinkBtn" aria-label="Copy a link to this page with the current color, font, and filters. Tap to copy, press and hold for options." title="Tap to copy a link to this page; press and hold for options">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      </button>
+    </div>
   </nav>
 
   <div class="settings-panel" id="settingsPanel" hidden>
@@ -100,7 +124,7 @@
       <select class="settings-select" id="fontSelect"></select>
     </div>
     <div class="settings-group">
-      <label class="settings-label">Accent Color</label>
+      <label class="settings-label">Theme Color</label>
       <div class="color-presets" aria-label="Color presets">
         <button type="button" class="preset-btn" data-color="#DA291C" style="--swatch: #DA291C" aria-label="Swiss Red"></button>
         <button type="button" class="preset-btn" data-color="#D4FF00" style="--swatch: #D4FF00" aria-label="Chartreuse"></button>
@@ -110,6 +134,14 @@
         <button type="button" class="preset-btn" data-color="#8A2BE2" style="--swatch: #8A2BE2" aria-label="Electric Purple"></button>
         <button type="button" class="preset-btn" data-color="#00E5FF" style="--swatch: #00E5FF" aria-label="Cyan"></button>
         <button type="button" class="preset-btn" data-color="#111111" style="--swatch: #111111" aria-label="Pitch Black"></button>
+        <div class="color-presets-muted">
+            <button type="button" class="preset-btn" data-color="#6a5c5c" style="--swatch: #6a5c5c" aria-label="Muted Taupe"></button>
+            <button type="button" class="preset-btn" data-color="#5c646c" style="--swatch: #5c646c" aria-label="Muted Slate"></button>
+            <button type="button" class="preset-btn" data-color="#5d6b5c" style="--swatch: #5d6b5c" aria-label="Muted Sage"></button>
+            <button type="button" class="preset-btn" data-color="#6d5c6c" style="--swatch: #6d5c6c" aria-label="Muted Mauve"></button>
+            <button type="button" class="preset-btn" data-color="#7a6a5c" style="--swatch: #7a6a5c" aria-label="Muted Tan"></button>
+            <button type="button" class="preset-btn" data-color="#5c5c66" style="--swatch: #5c5c66" aria-label="Muted Graphite"></button>
+        </div>
       </div>
       <div class="color-row">
         <label for="colorPicker" class="sr-only" style="display:none;">Custom color picker</label>
@@ -122,11 +154,22 @@
     </div>
   </div>
 
+  <div class="share-panel" id="sharePanel" hidden>
+    <span class="share-title">Share this page</span>
+    <label class="share-opt"><input type="checkbox" id="shareColor" checked> Include current color</label>
+    <label class="share-opt"><input type="checkbox" id="shareFont" checked> Include current font</label>
+    <label class="share-opt"><input type="checkbox" id="shareScroll"> Include scroll position</label>
+    <label class="share-opt" id="shareFiltersRow"><input type="checkbox" id="shareFilters" checked> Include filters &amp; view</label>
+    <input type="text" class="share-url" id="shareUrl" readonly aria-label="Shareable link">
+    <button type="button" class="share-copy" id="shareCopyBtn">Copy link</button>
+  </div>
+
   <main id="main-content">
     <header class="post-header">
       <h1 class="post-title">{{ article.title }}</h1>
       <div class="post-meta">
         <span><time datetime="{{ article.date | date: "%Y-%m-%d" }}">{{ article.date | date: "%B %d, %Y" }}</time></span>
+        {% if article.repo %}<span class="post-repo"><a href="/?tags={{ article.repoTag }}&amp;view=articles">#{{ article.repoDisplay }}</a></span>{% endif %}
         {% if article.readTime %}<span>{{ article.readTime }} Min Read</span>{% endif %}
         {% if article.url %}<span class="post-discuss"><a href="{{ article.url }}" target="_blank" rel="noopener noreferrer">Discuss on GitHub ↗</a></span>{% endif %}
       </div>
@@ -176,6 +219,6 @@
     </nav>
   </footer>
 -->
-  <script src="/sanko.js"></script>
+  <script src="/sanko.js?v=2"></script>
 </body>
 </html>

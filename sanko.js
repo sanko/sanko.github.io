@@ -206,6 +206,20 @@
       }
     }
 
+    // Restore a shared scroll position (?...#scroll=N). Retries a few times so
+    // layout settles after filters/fonts load before jumping to the position.
+    function restoreScroll() {
+      const m = window.location.hash.match(/^#scroll=(\d+)/);
+      if (!m) return;
+      const target = parseInt(m[1], 10);
+      const clamp = (y) => Math.min(y, Math.max(0, document.documentElement.scrollHeight - window.innerHeight));
+      const jump = () => window.scrollTo(0, clamp(target));
+      requestAnimationFrame(jump);
+      window.addEventListener('load', jump);
+      setTimeout(jump, 300);
+      setTimeout(jump, 1200);
+    }
+
     if (mainForm) {
       mainForm.addEventListener('change', () => {
         const activeTags = Array.from(document.querySelectorAll('.filter-cb:checked')).map(cb => cb.value);
@@ -216,7 +230,13 @@
         if (activeTags.length) newParams.set('tags', activeTags.join(','));
         if (activeView === 'articles') newParams.set('view', 'articles');
 
-        const newUrl = window.location.pathname + (newParams.toString() ? '?' + newParams.toString() : '');
+        const urlParams = new URLSearchParams(window.location.search);
+        const colorParam = urlParams.get('color');
+        if (colorParam) newParams.set('color', colorParam);
+        const fontParam = urlParams.get('font');
+        if (fontParam) newParams.set('font', fontParam);
+
+        const newUrl = window.location.pathname + (newParams.toString() ? '?' + newParams.toString() : '') + (window.location.hash || '');
         window.history.replaceState({}, '', newUrl);
       });
 
@@ -254,8 +274,25 @@
         }
       });
 
+      // "More articles…" on a project flips to the Article view with that
+      // project's repo filter applied, without a full page reload.
+      document.addEventListener('click', (e) => {
+        const link = e.target.closest('.proj-articles-more');
+        if (!link || !mainForm) return;
+        e.preventDefault();
+        const view = document.getElementById('view-articles');
+        const cb = document.getElementById(link.getAttribute('data-tag'));
+        if (view) view.checked = true;
+        if (cb) cb.checked = true;
+        mainForm.dispatchEvent(new Event('change'));
+        const archive = document.querySelector('.archive-wrap');
+        if (archive) archive.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+
       syncUrlState();
     }
+
+    restoreScroll();
 
     // Settings Panel Initialization
     if (select) {
@@ -376,6 +413,195 @@
         closePanel();
       }
     });
+
+    // Share / Copy-Link: builds a URL encoding the current theme + filters,
+    // copies it to the clipboard, and lets the visitor pick what to include.
+    const shareBtnEl = document.getElementById('shareLinkBtn');
+    const sharePanelEl = document.getElementById('sharePanel');
+    if (shareBtnEl && sharePanelEl) {
+      const shareColorCb = document.getElementById('shareColor');
+      const shareFontCb = document.getElementById('shareFont');
+      const shareScrollCb = document.getElementById('shareScroll');
+      const shareFiltersCb = document.getElementById('shareFilters');
+      const shareFiltersRow = document.getElementById('shareFiltersRow');
+      const shareUrlInput = document.getElementById('shareUrl');
+      const shareCopyBtn = document.getElementById('shareCopyBtn');
+
+      if (shareFiltersRow && !mainForm) shareFiltersRow.style.display = 'none';
+
+      function composeShareUrl() {
+        const params = new URLSearchParams();
+        if (shareColorCb && shareColorCb.checked) {
+          const c = localStorage.getItem('swiss-color');
+          if (c) params.set('color', c.replace(/^#/, ''));
+        }
+        if (shareFontCb && shareFontCb.checked) {
+          const f = localStorage.getItem('swiss-font');
+          if (f) params.set('font', f.split(',')[0].replace(/['"]/g, '').trim());
+        }
+        if (shareFiltersCb && shareFiltersCb.checked && mainForm) {
+          const tags = Array.from(document.querySelectorAll('.filter-cb:checked')).map(cb => cb.value);
+          const viewEl = document.querySelector('.view-cb:checked');
+          if (tags.length) params.set('tags', tags.join(','));
+          if (viewEl && viewEl.value === 'articles') params.set('view', 'articles');
+        }
+        const qs = params.toString();
+        let shareUrl = location.origin + location.pathname + (qs ? '?' + qs : '');
+        if (shareScrollCb && shareScrollCb.checked) {
+          const scrollY = Math.round(window.scrollY || window.pageYOffset || 0);
+          shareUrl += '#scroll=' + scrollY;
+        }
+        return shareUrl;
+      }
+
+      // URL shared on a simple tap: no theme/scroll params, only active filters/view
+      function composeSimpleShareUrl() {
+        const params = new URLSearchParams();
+        if (mainForm) {
+          const tags = Array.from(document.querySelectorAll('.filter-cb:checked')).map(cb => cb.value);
+          const viewEl = document.querySelector('.view-cb:checked');
+          if (tags.length) params.set('tags', tags.join(','));
+          if (viewEl && viewEl.value === 'articles') params.set('view', 'articles');
+        }
+        const qs = params.toString();
+        return location.origin + location.pathname + (qs ? '?' + qs : '');
+      }
+
+      function scrollShareUrlToEnd() {
+        if (!shareUrlInput) return;
+        const len = shareUrlInput.value.length;
+        if (shareUrlInput.setSelectionRange) shareUrlInput.setSelectionRange(len, len);
+        shareUrlInput.scrollLeft = shareUrlInput.scrollWidth;
+      }
+
+      function updateShareUrl() {
+        if (!shareUrlInput) return;
+        shareUrlInput.value = composeShareUrl();
+        scrollShareUrlToEnd();
+        requestAnimationFrame(scrollShareUrlToEnd);
+      }
+
+      function copyShareUrl(url) {
+        const text = url || (shareUrlInput ? shareUrlInput.value : '');
+        if (!text) return;
+        const feedback = () => {
+          if (!sharePanelEl.hidden && shareCopyBtn) {
+            const label = shareCopyBtn.textContent;
+            shareCopyBtn.textContent = 'Copied!';
+            setTimeout(() => { shareCopyBtn.textContent = label; }, 1400);
+          } else {
+            showCopyToast();
+          }
+        };
+        const fallbackCopy = () => {
+          shareUrlInput.focus();
+          shareUrlInput.select();
+          try { document.execCommand('copy'); } catch (e) {}
+          feedback();
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(feedback).catch(fallbackCopy);
+        } else {
+          fallbackCopy();
+        }
+      }
+
+      function syncShareOptions() {
+        if (shareColorCb) shareColorCb.checked = !!localStorage.getItem('swiss-color');
+        if (shareFontCb) shareFontCb.checked = !!localStorage.getItem('swiss-font');
+        if (shareFiltersCb && mainForm) {
+          const hasTags = document.querySelectorAll('.filter-cb:checked').length > 0;
+          const viewEl = document.querySelector('.view-cb:checked');
+          shareFiltersCb.checked = hasTags || (viewEl && viewEl.value === 'articles');
+        }
+      }
+
+      function openSharePanel() {
+        syncShareOptions();
+        updateShareUrl();
+        sharePanelEl.hidden = false;
+        if (shareUrlInput) shareUrlInput.focus();
+      }
+
+      function closeSharePanel() {
+        sharePanelEl.hidden = true;
+      }
+
+      // Transient "Link copied" toast shown when copying without opening the dialog
+      const shareToast = document.createElement('span');
+      shareToast.className = 'share-toast';
+      shareToast.setAttribute('role', 'status');
+      shareToast.textContent = 'Link copied';
+      shareToast.hidden = true;
+      if (shareBtnEl.parentNode) shareBtnEl.parentNode.appendChild(shareToast);
+
+      function showCopyToast() {
+        if (!shareToast) return;
+        shareToast.hidden = false;
+        clearTimeout(showCopyToast.__t);
+        showCopyToast.__t = setTimeout(() => { shareToast.hidden = true; }, 1400);
+      }
+
+      // Tap = copy the link; press-and-hold = open the share dialog
+      let suppressClick = false;
+      let longPressTimer = null;
+      let longPressCoords = null;
+      const cancelLongPress = () => { clearTimeout(longPressTimer); longPressTimer = null; };
+
+      shareBtnEl.addEventListener('pointerdown', e => {
+        e.stopPropagation();
+        cancelLongPress();
+        longPressCoords = { x: e.clientX, y: e.clientY };
+        longPressTimer = setTimeout(() => {
+          longPressTimer = null;
+          suppressClick = true;
+          if (sharePanelEl.hidden) openSharePanel();
+          else closeSharePanel();
+        }, 700);
+      });
+      shareBtnEl.addEventListener('pointerup', cancelLongPress);
+      shareBtnEl.addEventListener('pointercancel', cancelLongPress);
+      shareBtnEl.addEventListener('pointermove', e => {
+        if (!longPressTimer || !longPressCoords) return;
+        const dx = e.clientX - longPressCoords.x;
+        const dy = e.clientY - longPressCoords.y;
+        if (dx * dx + dy * dy > 100) cancelLongPress();
+      });
+      shareBtnEl.addEventListener('contextmenu', e => { if (suppressClick) e.preventDefault(); });
+      shareBtnEl.addEventListener('click', () => {
+        if (suppressClick) { suppressClick = false; return; }
+        copyShareUrl(composeSimpleShareUrl());
+      });
+
+      [shareColorCb, shareFontCb, shareScrollCb, shareFiltersCb].forEach(cb => {
+        if (cb) cb.addEventListener('change', updateShareUrl);
+      });
+      if (shareCopyBtn) shareCopyBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        copyShareUrl();
+      });
+      sharePanelEl.addEventListener('pointerdown', e => e.stopPropagation());
+      sharePanelEl.addEventListener('click', e => e.stopPropagation());
+      document.addEventListener('mousedown', e => {
+        if (sharePanelEl.hidden) return;
+        if (!sharePanelEl.contains(e.target) && !shareBtnEl.contains(e.target)) closeSharePanel();
+      }, true);
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && !sharePanelEl.hidden) closeSharePanel();
+      });
+
+      // While the dialog is open with scroll enabled, keep the #scroll value live
+      let scrollRAF = null;
+      window.addEventListener('scroll', () => {
+        if (sharePanelEl.hidden) return;
+        if (!shareScrollCb || !shareScrollCb.checked) return;
+        if (scrollRAF) return;
+        scrollRAF = requestAnimationFrame(() => {
+          scrollRAF = null;
+          updateShareUrl();
+        });
+      }, { passive: true });
+    }
 
     initCopyButtons();
     watchGiscus();
