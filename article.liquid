@@ -29,7 +29,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;700&family=Playfair+Display:wght@400;700&family=DM+Sans:wght@400;700&family=Fraunces:opsz,wght,9..144,400;9..144,700&family=Outfit:wght@400;700&family=Anton&family=Bebas+Neue&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/sanko.css?v=10">
+  <link rel="stylesheet" href="/sanko.css?v=13">
 
   {% if analytics.plausible.enabled %}<!-- Plausible analytics -->
   <script defer data-domain="{{ analytics.plausible.domain }}" src="{{ analytics.plausible.src }}"></script>
@@ -173,10 +173,14 @@
     <header class="post-header">
       <h1 class="post-title">{{ article.title }}</h1>
       <div class="post-meta">
-        <span><time datetime="{{ article.date | date: "%Y-%m-%d" }}">{{ article.date | date: "%B %d, %Y" }}</time></span>
-        {% if article.repo %}<span class="post-repo"><a href="/?tags={{ article.repoTag }}&amp;view=articles">#{{ article.repoDisplay }}</a></span>{% endif %}
-        {% if article.readTime %}<span>{{ article.readTime }} Min Read</span>{% endif %}
-        {% if article.url %}<span class="post-discuss"><a href="{{ article.url }}" target="_blank" rel="noopener noreferrer">Discuss on GitHub ↗</a></span>{% endif %}
+        <div class="post-meta-row post-meta-row-main">
+          <span class="post-date"><time datetime="{{ article.date | date: "%Y-%m-%d" }}">{{ article.date | date: "%B %d, %Y" }}</time></span>
+          {% if article.readTime %}<span class="post-readtime">{{ article.readTime }} Min Read</span>{% endif %}
+        </div>
+        <div class="post-meta-row post-meta-row-aux">
+          {% if article.repo %}<span class="post-repo"><a href="/?tags={{ article.repoTag }}&amp;view=articles">#{{ article.repoDisplay }}</a></span>{% endif %}
+          {% if article.url %}<span class="post-discuss"><a href="{{ article.url }}" target="_blank" rel="noopener noreferrer">Discuss on GitHub ↗</a></span>{% endif %}
+        </div>
       </div>
     </header>
 
