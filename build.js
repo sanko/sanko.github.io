@@ -904,7 +904,8 @@ function prepareTemplateData(allContent, uniqueTags) {
         feeds: config.feeds ? Object.keys(config.feeds).map(k => ({
             file: k,
             ...config.feeds[k],
-            mime: config.feeds[k].type === 'atom' ? 'application/atom+xml' : 'application/rss+xml'
+            mime: config.feeds[k].type === 'atom' ? 'application/atom+xml' : 'application/rss+xml',
+            label: config.feeds[k].type === 'atom' ? 'Atom' : 'RSS'
         })) : [],
         year_range: config.profile.copyright_start == new Date().getFullYear() ? `${config.profile.copyright_start}` : `${config.profile.copyright_start}–${new Date().getFullYear()}`,
         filters: Array.from(uniqueTags).map(t => ({

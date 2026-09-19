@@ -29,7 +29,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;700&family=Playfair+Display:wght@400;700&family=DM+Sans:wght@400;700&family=Fraunces:opsz,wght,9..144,400;9..144,700&family=Outfit:wght@400;700&family=Anton&family=Bebas+Neue&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/sanko.css?v=5">
+  <link rel="stylesheet" href="/sanko.css?v=6">
 
   {% if analytics.plausible.enabled %}<!-- Plausible analytics -->
   <script defer data-domain="{{ analytics.plausible.domain }}" src="{{ analytics.plausible.src }}"></script>
@@ -115,6 +115,11 @@
       <button type="button" class="nav-settings" id="shareLinkBtn" aria-label="Copy a link to this page with the current color, font, and filters. Tap to copy, press and hold for options." title="Tap to copy a link to this page; press and hold for options">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
       </button>
+      {% if feeds %}
+      <button type="button" class="nav-settings" id="feedsToggle" aria-expanded="false" aria-controls="feedsPanel" aria-label="View site feeds" title="RSS, Atom and code feeds">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>
+      </button>
+      {% endif %}
     </div>
   </nav>
 
@@ -163,6 +168,18 @@
     <input type="text" class="share-url" id="shareUrl" readonly aria-label="Shareable link">
     <button type="button" class="share-copy" id="shareCopyBtn">Copy link</button>
   </div>
+
+  {% if feeds %}
+  <div class="share-panel feeds-panel" id="feedsPanel" hidden>
+    <span class="share-title">Feeds</span>
+    {% for feed in feeds %}
+    <a class="feed-link" href="{{ feed.file }}" type="{{ feed.mime }}">
+      <span class="feed-name">{{ feed.title }}</span>
+      <span class="feed-type">{{ feed.label }}</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
 
   <main id="main-content">
     <header class="post-header">
@@ -219,6 +236,6 @@
     </nav>
   </footer>
 -->
-  <script src="/sanko.js?v=2"></script>
+  <script src="/sanko.js?v=3"></script>
 </body>
 </html>
