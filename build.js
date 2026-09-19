@@ -904,8 +904,8 @@ function prepareTemplateData(allContent, uniqueTags) {
         feeds: config.feeds ? Object.keys(config.feeds).map(k => ({
             file: k,
             ...config.feeds[k],
-            mime: config.feeds[k].type === 'atom' ? 'application/atom+xml' : 'application/rss+xml',
-            label: config.feeds[k].type === 'atom' ? 'Atom' : 'RSS'
+            title: config.feeds[k].title || config.profile.name,
+            mime: config.feeds[k].type === 'atom' ? 'application/atom+xml' : 'application/rss+xml'
         })) : [],
         year_range: config.profile.copyright_start == new Date().getFullYear() ? `${config.profile.copyright_start}` : `${config.profile.copyright_start}–${new Date().getFullYear()}`,
         filters: Array.from(uniqueTags).map(t => ({
@@ -939,17 +939,17 @@ function generateFeedFiles(allContent) {
             title: settings.title || p.name,
             description: p.tagline,
             feed_url: `${p.url}/${filename}`,
-            site_url: p.url,
-            author: p.name
+            site_url: p.url
         });
 
         feedItems.forEach(item => {
             feed.item({
                 title: item.title || 'Note',
-                description: item.body,
+                description: md.render(item.body || ''),
                 url: item.url,
                 date: item.date,
-                guid: item.url
+                guid: item.url,
+                author: p.name
             });
         });
 

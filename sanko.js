@@ -397,7 +397,7 @@
     if (toggle) {
       toggle.addEventListener('click', e => {
         e.stopPropagation();
-        if (panel.hidden) { closeFeedsPanel(); openPanel(); }
+        if (panel.hidden) openPanel();
         else closePanel();
       });
     }
@@ -411,43 +411,6 @@
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape' && panel && !panel.hidden) {
         closePanel();
-      }
-    });
-
-    // Feeds panel (RSS/Atom links)
-    const feedsToggle = document.getElementById('feedsToggle');
-    const feedsPanel = document.getElementById('feedsPanel');
-
-    function openFeedsPanel() {
-      if (!feedsToggle || !feedsPanel) return;
-      closePanel();
-      feedsPanel.hidden = false;
-      feedsToggle.setAttribute('aria-expanded', 'true');
-    }
-
-    function closeFeedsPanel() {
-      if (!feedsToggle || !feedsPanel) return;
-      feedsPanel.hidden = true;
-      feedsToggle.setAttribute('aria-expanded', 'false');
-    }
-
-    if (feedsToggle && feedsPanel) {
-      feedsToggle.addEventListener('click', e => {
-        e.stopPropagation();
-        if (feedsPanel.hidden) openFeedsPanel();
-        else closeFeedsPanel();
-      });
-    }
-
-    document.addEventListener('click', e => {
-      if (feedsPanel && !feedsPanel.hidden && !feedsPanel.contains(e.target) && e.target !== feedsToggle) {
-        closeFeedsPanel();
-      }
-    });
-
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Escape' && feedsPanel && !feedsPanel.hidden) {
-        closeFeedsPanel();
       }
     });
 

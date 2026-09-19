@@ -100,11 +100,6 @@ button { font: inherit; border: none; background: none; cursor: pointer; }
 .share-panel { position: fixed; top: 4rem; right: var(--pad-x); z-index: 200; width: min(92vw, 320px); background: var(--panel-bg); color: var(--panel-text); border: 1px solid var(--panel-border); border-radius: var(--rad); padding: 1.3rem 1.4rem; font-family: var(--font); box-shadow: 0 18px 50px rgba(0,0,0,0.25); }
 .share-toast { position: fixed; top: 3.5rem; right: var(--pad-x); z-index: 300; background: var(--panel-bg); color: var(--panel-text); border: 1px solid var(--panel-border); border-radius: var(--rad-sm); padding: 0.4rem 0.75rem; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
 .share-toast[hidden] { display: none; }
-
-.feeds-panel { padding: 0.6rem; }
-.feed-link { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding: 0.45rem 0.8rem; border-radius: var(--rad-sm); color: inherit; text-decoration: none; font-size: 0.75rem; opacity: 0.9; }
-.feed-link:hover, .feed-link:focus-visible { background: color-mix(in srgb, contrast-color(var(--primary)) 8%, transparent); opacity: 1; }
-.feed-type { flex: none; font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.55; }
 .share-panel[hidden] { display: none; }
 .share-title { display: block; font-size: 0.65rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.12em; color: var(--panel-label); margin-bottom: 0.9rem; }
 .share-opt { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; margin-bottom: 0.5rem; cursor: pointer; }
@@ -196,10 +191,11 @@ button { font: inherit; border: none; background: none; cursor: pointer; }
 .proj-desc { grid-area: stack; z-index: 1; align-self: start; opacity: 0; transition: opacity var(--transition); pointer-events: none; font-size: clamp(0.85rem, 1.2vw, 1.05rem); line-height: 1.5; max-width: 36rem; text-wrap: pretty; }
 .proj-articles { position: absolute; top: var(--gap); right: 0; width: clamp(18rem, 30vw, 30rem); max-width: 100%; max-height: 100%; overflow-y: auto; z-index: 2; display: flex; flex-direction: column; gap: 0.4rem; padding: 0.5rem 0 0.75rem; opacity: 0; transition: opacity var(--transition); pointer-events: none; }
 .proj-article { display: grid; grid-template-columns: 4rem 1fr; gap: 0.75rem; color: inherit; }
-.entry-meta { font-size: clamp(0.7rem, 0.95vw, 0.85rem); font-weight: 500; color: color-mix(in srgb, contrast-color(var(--primary)) 50%, var(--primary)); padding-top: 0.1rem; }
-.entry-body h3 { font-size: clamp(0.85rem, 1.2vw, 1.05rem); font-weight: 700; line-height: 1.3; margin-bottom: 0.1rem; text-wrap: balance; }
-.entry-body h3 a:hover, .entry-body h3 a:focus-visible { border-bottom: 1px solid currentColor; }
-.proj-articles-more { display: inline-block; margin-top: 0.5rem; font-size: clamp(0.7rem, 0.95vw, 0.85rem); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: inherit; text-decoration: none; border-bottom: 1px solid currentColor; padding-bottom: 1px; transition: opacity var(--transition); }
+.entry-meta { font-size: clamp(0.75rem, 0.95vw, 0.85rem); font-weight: 500; color: color-mix(in srgb, contrast-color(var(--primary)) 50%, var(--primary)); padding-top: 0.25rem; }
+.entry-body span { font-size: clamp(0.85rem, 1.2vw, 1.05rem); font-weight: 700; line-height: .5; margin-bottom: 0.1rem; text-wrap: balance; }
+.entry-body span a { text-decoration: none; text-underline-offset: 4px; }
+.entry-body span a:hover, .entry-body span a:focus-visible { text-decoration: underline; text-decoration-thickness: 1px; text-decoration-offset: 4px; text-underline-offset: 4px; }
+.proj-articles-more { display: inline-block; margin-top: 0.5rem; font-size: clamp(0.7rem, 0.95vw, 0.85rem); font-weight: 700; color: inherit; text-decoration: none; transition: opacity var(--transition); }
 .proj-articles-more:hover, .proj-articles-more:focus-visible { opacity: 0.6; }
 .article-meta { padding-left: .5em; flex: 0 0 100px; font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: color-mix(in srgb, contrast-color(var(--primary)) 50%, var(--primary)); }
 .article-meta time { display: block; }
@@ -208,7 +204,6 @@ button { font: inherit; border: none; background: none; cursor: pointer; }
 .article-content { flex: 1; display: flex; flex-direction: column; gap: 0.25rem; }
 .article-title { font-size: clamp(1.5rem, 4vw, 3.5rem); font-weight: 900; line-height: 1.1; letter-spacing: -0.02em; transition: -webkit-text-stroke var(--transition); text-wrap: balance; }
 .article-title a { color: inherit; text-decoration: none; }
-.article-title a:hover, .article-title a:focus-visible { border-bottom: 1px solid currentColor; }
 .article-desc { font-size: clamp(0.9rem, 1.2vw, 1.1rem); line-height: 1.5; color: color-mix(in srgb, contrast-color(var(--primary)) 70%, var(--primary)); max-width: 60ch; text-wrap: pretty; }
 
 .year-group { margin-bottom: 4rem; transition: margin var(--transition); }

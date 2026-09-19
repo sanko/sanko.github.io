@@ -30,7 +30,7 @@
         "repo": "sanko/infix",
         "name": "infix",
         "blurb": "A modern, JIT-powered, and dependency-free Foreign Function Interface (FFI) library and type introspection engine for C. Dynamically call native functions and create secure callbacks using simple, human-readable signatures. Ideal for language bindings, plugins, and dynamic library interactions.",
-        "tags": ["compilers", "jit", "c"],
+        "tags": ["compilers", "codegen", "jit", "c"],
         "order": 2
       },
       {
@@ -79,7 +79,7 @@
         "repo": "sanko/Alien-Xmake",
         "name": "Alien::Xmake",
         "blurb": "Cross-platform build utility and package manager for Perl. Alien::Xmake supports project generation, management, and compilation in everything from Assembly to Zig. Alien::Xrepo supports user-built repos, Conan, Vcpkg, homebrew, pacman, Clib, dub, etc.",
-        "tags": ["ffi", "c", "xmake", "affix"],
+        "tags": ["ffi", "c", "xmake", "codegen", "affix"],
         "order": 10
       },
       {
